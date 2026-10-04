@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medical History & Prescriptions — PetIdentity</title>
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <div id="navbar-container"></div>
+
+  <div class="dashboard-layout">
+    <aside class="dashboard-sidebar">
+      <div style="margin-bottom: 24px;">
+        <label class="form-label" style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-text-subtle);">Active Companion</label>
+        <select id="global-pet-switcher" class="form-control" style="font-weight: 600;">
+          <option>Loading pets...</option>
+        </select>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li class="sidebar-item"><a href="/pages/dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="/pages/pet.html">🐾 Pet Profile & Identity</a></li>
+        <li class="sidebar-item"><a href="/pages/qr-manage.html">🏷️ QR Collar Tag</a></li>
+        <li class="sidebar-item"><a href="/pages/vaccinations.html">💉 Vaccinations</a></li>
+        <li class="sidebar-item active"><a href="/pages/medical.html">🩺 Medical History</a></li>
+        <li class="sidebar-item"><a href="/pages/reminders.html">⏰ Reminders</a></li>
+        <li class="sidebar-item"><a href="/pages/documents.html">📁 Documents</a></li>
+        <li class="sidebar-item"><a href="/pages/lost-found.html">🚨 Lost & Found Hub</a></li>
+        <li class="sidebar-item"><a href="/pages/vets.html">🏥 Find Nearby Vets</a></li>
+      </ul>
+    </aside>
+
+    <main class="dashboard-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <h2>Clinical History & Medications</h2>
+          <p style="color: var(--color-text-muted);">Consultations, diagnoses, surgical treatments, and active prescriptions.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button onclick="window.ui.openModal('modal-add-med')" class="btn btn-secondary btn-sm">+ Add Prescription</button>
+          <button onclick="window.ui.openModal('modal-add-event')" class="btn btn-primary btn-sm">+ Record Clinical Event</button>
+        </div>
+      </div>
+
+      <!-- Active Prescriptions -->
+      <div class="card" style="margin-bottom: 30px;">
+        <h4 style="margin-bottom: 16px;">💊 Active Prescriptions & Medications</h4>
+        <div id="medications-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+          <p style="color: var(--color-text-muted);">Loading active medications...</p>
+        </div>
+      </div>
+
+      <!-- Chronological Clinical Events -->
+      <div class="card">
+        <h4 style="margin-bottom: 20px;">🩺 Clinical Events & Procedures</h4>
+        <div id="clinical-events-container" class="timeline">
+          <p style="color: var(--color-text-muted);">Loading medical events...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: Add Clinical Event -->
+  <div id="modal-add-event" class="modal-overlay">
+    <div class="modal-dialog">
+      <h3 style="margin-bottom: 16px;">Record Clinical Event</h3>
+      <form id="form-event">
+        <div class="form-group">
+          <label class="form-label">Event Type *</label>
+          <select id="eventType" class="form-control" required>
+            <option value="CONSULTATION">Vet Consultation</option>
+            <option value="DIAGNOSIS">Diagnostic Exam / Lab</option>
+            <option value="SURGERY">Surgical Procedure</option>
+            <option value="DENTAL">Dental Cleaning / Care</option>
+            <option value="TREATMENT">Medical Treatment</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Title / Reason *</label>
+          <input type="text" id="eventTitle" class="form-control" placeholder="e.g. Annual Wellness Checkup" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date *</label>
+          <input type="date" id="eventDate" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Diagnosis & Findings</label>
+          <textarea id="eventDiagnosis" class="form-control" placeholder="Healthy heart and coat. Mild tartar on molars."></textarea>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label">Clinic Name</label>
+            <input type="text" id="eventClinic" class="form-control" placeholder="MetroVet Center">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Doctor / Vet</label>
+            <input type="text" id="eventDoctor" class="form-control" placeholder="Dr. Elena">
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button type="button" onclick="window.ui.closeModal('modal-add-event')" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1;">Save Event</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Medication -->
+  <div id="modal-add-med" class="modal-overlay">
+    <div class="modal-dialog">
+      <h3 style="margin-bottom: 16px;">Add Medication</h3>
+      <form id="form-med">
+        <div class="form-group">
+          <label class="form-label">Medication Name *</label>
+          <input type="text" id="medName" class="form-control" placeholder="e.g. Nexgard Spectra / Apoquel" required>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label">Dosage *</label>
+            <input type="text" id="medDosage" class="form-control" placeholder="e.g. 10mg" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Frequency *</label>
+            <input type="text" id="medFreq" class="form-control" placeholder="e.g. Once daily with food" required>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label">Start Date *</label>
+            <input type="date" id="medStart" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">End Date (Optional)</label>
+            <input type="date" id="medEnd" class="form-control">
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button type="button" onclick="window.ui.closeModal('modal-add-med')" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1;">Save Medication</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    window.auth.requireAuth();
+
+    async function loadMedicalRecords() {
+      const petId = localStorage.getItem('active_pet_id');
+      if (!petId) return;
+
+      try {
+        // Load Meds
+        const meds = await window.api.getMedications(petId);
+        const medsDiv = document.getElementById('medications-container');
+        if (!meds || meds.length === 0) {
+          medsDiv.innerHTML = '<p style="color: var(--color-text-muted);">No active prescriptions recorded.</p>';
+        } else {
+          medsDiv.innerHTML = meds.map(m => `
+            <div style="background: var(--color-bg-canvas); padding: 16px; border-radius: 12px; border: 1px solid var(--color-border);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <strong>${m.medicationName}</strong>
+                <span class="badge badge-active">${m.dosage}</span>
+              </div>
+              <div style="color: var(--color-text-muted); font-size: 0.85rem;">${m.frequency}</div>
+              <div style="color: var(--color-text-subtle); font-size: 0.75rem; margin-top: 8px;">Started: ${window.ui.formatDate(m.startDate)}</div>
+            </div>
+          `).join('');
+        }
+
+        // Load Events
+        const events = await window.api.getMedicalEvents(petId);
+        const eventsDiv = document.getElementById('clinical-events-container');
+        if (!events || events.length === 0) {
+          eventsDiv.innerHTML = '<p style="color: var(--color-text-muted);">No past clinical events or procedures recorded.</p>';
+        } else {
+          eventsDiv.innerHTML = events.map(e => `
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div style="font-size: 0.8rem; color: var(--color-text-subtle);">${window.ui.formatDate(e.eventDate)} • ${e.eventType}</div>
+              <h4 style="margin: 4px 0 6px;">${e.title}</h4>
+              <p style="color: var(--color-text-muted); font-size: 0.9rem;">${e.diagnosis || e.treatmentSummary || 'Routine examination performed.'}</p>
+              ${e.clinicName ? `<div style="font-size: 0.8rem; color: var(--color-text-subtle); margin-top: 4px;">🏥 ${e.clinicName} (${e.vetName || 'Vet on duty'})</div>` : ''}
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    document.getElementById('form-event').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const petId = localStorage.getItem('active_pet_id');
+      const payload = {
+        eventType: document.getElementById('eventType').value,
+        title: document.getElementById('eventTitle').value.trim(),
+        eventDate: document.getElementById('eventDate').value,
+        diagnosis: document.getElementById('eventDiagnosis').value.trim(),
+        clinicName: document.getElementById('eventClinic').value.trim(),
+        vetName: document.getElementById('eventDoctor').value.trim(),
+      };
+
+      try {
+        await window.api.createMedicalEvent(petId, payload);
+        window.ui.closeModal('modal-add-event');
+        window.ui.showToast('Clinical event saved!', 'success');
+        loadMedicalRecords();
+      } catch (err) {
+        window.ui.showToast(err.message, 'error');
+      }
+    });
+
+    document.getElementById('form-med').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const petId = localStorage.getItem('active_pet_id');
+      const payload = {
+        medicationName: document.getElementById('medName').value.trim(),
+        dosage: document.getElementById('medDosage').value.trim(),
+        frequency: document.getElementById('medFreq').value.trim(),
+        startDate: document.getElementById('medStart').value,
+        endDate: document.getElementById('medEnd').value || null,
+      };
+
+      try {
+        await window.api.createMedication(petId, payload);
+        window.ui.closeModal('modal-add-med');
+        window.ui.showToast('Prescription saved!', 'success');
+        loadMedicalRecords();
+      } catch (err) {
+        window.ui.showToast(err.message, 'error');
+      }
+    });
+
+    loadMedicalRecords();
+  </script>
+</body>
+</html>

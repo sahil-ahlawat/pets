@@ -1,0 +1,17 @@
+# Dockerfile.api
+FROM golang:1.24-alpine AS builder
+WORKDIR /app
+RUN apk add --no-cache git ca-certificates tzdata
+COPY backend/go.mod backend/go.sum ./
+RUN go mod download
+COPY backend/ .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /bin/pet-api ./cmd/api
+
+FROM alpine:3.19
+RUN apk add --no-cache ca-certificates tzdata
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+COPY --from=builder /bin/pet-api /usr/local/bin/pet-api
+COPY backend/migrations /migrations
+USER appuser
+EXPOSE 8080
+ENTRYPOINT ["/usr/local/bin/pet-api"]

@@ -1,0 +1,1504 @@
+openapi: 3.0.3
+info:
+  title: Pet Digital Identity Platform API
+  description: >
+    Production REST API for Pet Digital Identity Platform. Single source of truth
+    for Web (Vanilla JS) and Mobile (Flutter iOS & Android).
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local Development Server
+  - url: https://api.petidentity.com/api/v1
+    description: Production Cluster
+
+paths:
+  # ---------------- HEALTH & METRICS ----------------
+  /healthz:
+    get:
+      summary: Liveness check
+      responses:
+        '200':
+          description: Service alive
+  /readyz:
+    get:
+      summary: Readiness check (DB & Redis ping)
+      responses:
+        '200':
+          description: Service ready to handle traffic
+        '503':
+          description: Service dependencies unavailable
+
+  # ---------------- AUTH ----------------
+  /auth/register:
+    post:
+      summary: Register new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /auth/login:
+    post:
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      summary: Rotate refresh token and get fresh JWT access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/otp/request:
+    post:
+      summary: Request one-time password (OTP) for passwordless login or phone verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target, purpose]
+              properties:
+                target:
+                  type: string
+                  example: user@example.com
+                purpose:
+                  type: string
+                  enum: [LOGIN, VERIFY_PHONE, RESET_PASSWORD]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse'
+
+  /auth/otp/verify:
+    post:
+      summary: Verify OTP code and issue auth tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target, otp, purpose]
+              properties:
+                target:
+                  type: string
+                otp:
+                  type: string
+                  example: "492810"
+                purpose:
+                  type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /auth/me:
+    get:
+      summary: Get authenticated user profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  # ---------------- PETS ----------------
+  /pets:
+    get:
+      summary: List pets belonging to authenticated user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetListResponse'
+    post:
+      summary: Create new pet profile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePetRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+
+  /pets/{id}:
+    get:
+      summary: Get full pet details
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PetIdParam'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Update pet profile and settings
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PetIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePetRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetDetail'
+    delete:
+      summary: Soft-delete / archive pet
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PetIdParam'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse'
+
+  /pets/{id}/lost:
+    post:
+      summary: Mark pet as LOST and trigger emergency broadcast
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PetIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkLostRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse'
+
+  /pets/{id}/reunited:
+    post:
+      summary: Mark pet as REUNITED (resolves lost alert)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PetIdParam'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse'
+
+  # ---------------- QR MANAGEMENT ----------------
+  /pets/{id}/qr:
+    get:
+      summary: Get active and past QR codes for pet
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PetIdParam'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PetQRCode'
+    post:
+      summary: Generate a new unique random QR tag for pet
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PetIdParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tagLabel:
+                  type: string
+                  example: "Silicone Smart Collar Tag #2"
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetQRCode'
+
+  /qr/{id}/revoke:
+    post:
+      summary: Revoke an existing QR code (deactivates lost or stolen physical tag)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  example: "Tag lost in park"
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse'
+
+  # ---------------- HEALTH & RECORDS ----------------
+  /pets/{id}/vaccinations:
+    get:
+      summary: List pet vaccination records
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PetIdParam'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vaccination'
+    post:
+      summary: Record new vaccination administered to pet
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PetIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVaccinationRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vaccination'
+
+  /vaccination-types:
+    get:
+      summary: List standardized vaccination types catalog
+      parameters:
+        - name: species
+          in: query
+          schema:
+            type: string
+            enum: [DOG, CAT, BIRD, RABBIT, HORSE, REPTILE, OTHER]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VaccinationType'
+
+  /pets/{id}/medical-events:
+    get:
+      summary: List medical events (consultations, surgeries, lab tests)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PetIdParam'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MedicalEvent'
+    post:
+      summary: Add medical event
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PetIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMedicalEventRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicalEvent'
+
+  /pets/{id}/medications:
+    get:
+      summary: List medications
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PetIdParam'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Medication'
+    post:
+      summary: Add medication
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PetIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMedicationRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Medication'
+
+  /pets/{id}/timeline:
+    get:
+      summary: Get consolidated chronological timeline of all pet life events
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PetIdParam'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimelineEvent'
+
+  # ---------------- REMINDERS ----------------
+  /reminders:
+    get:
+      summary: List all active reminders for current user's pets
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reminder'
+    post:
+      summary: Create new reminder
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReminderRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reminder'
+
+  /reminders/{id}/complete:
+    post:
+      summary: Mark reminder as completed
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse'
+
+  # ---------------- DOCUMENTS & STORAGE ----------------
+  /storage/presigned-url:
+    post:
+      summary: Generate S3/R2 presigned upload URL for direct client storage upload
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [filename, mimeType, category]
+              properties:
+                filename:
+                  type: string
+                  example: "vaccination_certificate.pdf"
+                mimeType:
+                  type: string
+                  example: "application/pdf"
+                category:
+                  type: string
+                  enum: [PET_PHOTO, DOCUMENT]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresignedUrlResponse'
+
+  /pets/{id}/documents:
+    get:
+      summary: List documents for pet
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PetIdParam'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PetDocument'
+    post:
+      summary: Save document metadata after S3 upload
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PetIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDocumentRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetDocument'
+
+  # ---------------- PUBLIC QR EXPERIENCE ----------------
+  /public/pets/{token}:
+    get:
+      summary: Public pet scan endpoint (No Auth Required). Returns safe privacy-filtered DTO
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Cryptographic token from collar QR
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicPetProfile'
+        '404':
+          description: Pet tag not found or revoked
+
+  /public/pets/{token}/contact:
+    post:
+      summary: Send secure notification/message to pet owner without revealing phone
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactOwnerRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse'
+
+  /public/pets/{token}/found:
+    post:
+      summary: Report found pet with optional geolocation coordinates and photo
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportFoundRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse'
+
+  # ---------------- VETS ----------------
+  /vets:
+    get:
+      summary: Search veterinary clinics directory
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+        - name: city
+          in: query
+          schema:
+            type: string
+        - name: emergencyOnly
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vet'
+
+  /vets/nearby:
+    get:
+      summary: Find nearby vets using PostGIS geolocation distance search
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: radiusKm
+          in: query
+          schema:
+            type: number
+            default: 15
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vet'
+
+  # ---------------- NOTIFICATIONS & DEVICES ----------------
+  /notifications:
+    get:
+      summary: Get notifications for user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+
+  /notifications/{id}/read:
+    post:
+      summary: Mark notification as read
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse'
+
+  /devices:
+    post:
+      summary: Register mobile/web push device token (FCM/APNs)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deviceToken, platform]
+              properties:
+                deviceToken:
+                  type: string
+                platform:
+                  type: string
+                  enum: [ANDROID, IOS, WEB]
+                deviceName:
+                  type: string
+                appVersion:
+                  type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PetIdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Validation or parameter error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication credentials invalid or expired
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Resource conflict (e.g., email already registered)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    StandardResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Operation completed successfully"
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "VALIDATION_FAILED"
+            message:
+              type: string
+              example: "Invalid email format"
+            details:
+              type: object
+
+    AuthTokens:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+          example: 3600
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phoneNumber:
+          type: string
+        role:
+          type: string
+        avatarUrl:
+          type: string
+        allowDirectCalls:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    RegisterRequest:
+      type: object
+      required: [email, password, firstName, lastName]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phoneNumber:
+          type: string
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        tokens:
+          $ref: '#/components/schemas/AuthTokens'
+        user:
+          $ref: '#/components/schemas/User'
+
+    Pet:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        species:
+          type: string
+          enum: [DOG, CAT, BIRD, RABBIT, HORSE, REPTILE, OTHER]
+        breed:
+          type: string
+        gender:
+          type: string
+          enum: [MALE, FEMALE, UNKNOWN]
+        isNeutered:
+          type: boolean
+        dateOfBirth:
+          type: string
+          format: date
+        weightKg:
+          type: number
+        avatarUrl:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, LOST, FOUND, REUNITED, ARCHIVED]
+        createdAt:
+          type: string
+          format: date-time
+
+    PetDetail:
+      allOf:
+        - $ref: '#/components/schemas/Pet'
+        - type: object
+          properties:
+            bio:
+              type: string
+            dietaryPreferences:
+              type: string
+            allergies:
+              type: string
+            chronicConditions:
+              type: string
+            emergencyContactName:
+              type: string
+            emergencyContactPhone:
+              type: string
+            criticalMedicalAlert:
+              type: string
+            microchipNumber:
+              type: string
+            activeQrToken:
+              type: string
+            qrUrl:
+              type: string
+            privacy:
+              type: object
+              properties:
+                showOwnerName:
+                  type: boolean
+                showOwnerPhone:
+                  type: boolean
+                showMicrochip:
+                  type: boolean
+                showAllergiesEmergency:
+                  type: boolean
+                showVetInfo:
+                  type: boolean
+
+    CreatePetRequest:
+      type: object
+      required: [name, species]
+      properties:
+        name:
+          type: string
+        species:
+          type: string
+          enum: [DOG, CAT, BIRD, RABBIT, HORSE, REPTILE, OTHER]
+        breed:
+          type: string
+        gender:
+          type: string
+          enum: [MALE, FEMALE, UNKNOWN]
+        isNeutered:
+          type: boolean
+        dateOfBirth:
+          type: string
+          format: date
+        weightKg:
+          type: number
+        avatarUrl:
+          type: string
+        bio:
+          type: string
+        allergies:
+          type: string
+        emergencyContactName:
+          type: string
+        emergencyContactPhone:
+          type: string
+        microchipNumber:
+          type: string
+
+    UpdatePetRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        breed:
+          type: string
+        gender:
+          type: string
+        isNeutered:
+          type: boolean
+        weightKg:
+          type: number
+        avatarUrl:
+          type: string
+        bio:
+          type: string
+        allergies:
+          type: string
+        chronicConditions:
+          type: string
+        emergencyContactName:
+          type: string
+        emergencyContactPhone:
+          type: string
+        criticalMedicalAlert:
+          type: string
+        showOwnerName:
+          type: boolean
+        showOwnerPhone:
+          type: boolean
+        showMicrochip:
+          type: boolean
+
+    PetListResponse:
+      type: object
+      properties:
+        pets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pet'
+        nextCursor:
+          type: string
+
+    PetQRCode:
+      type: object
+      properties:
+        id:
+          type: string
+        petId:
+          type: string
+        token:
+          type: string
+        status:
+          type: string
+        tagLabel:
+          type: string
+        scanCount:
+          type: integer
+        lastScannedAt:
+          type: string
+          format: date-time
+        publicUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    PublicPetProfile:
+      type: object
+      description: Safe, privacy-filtered DTO exposed when QR tag is scanned
+      properties:
+        token:
+          type: string
+        name:
+          type: string
+        species:
+          type: string
+        breed:
+          type: string
+        gender:
+          type: string
+        ageDescription:
+          type: string
+        avatarUrl:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, LOST, FOUND]
+        lostDetails:
+          type: object
+          properties:
+            lastSeenAddress:
+              type: string
+            circumstances:
+              type: string
+            rewardAmount:
+              type: string
+            lostDate:
+              type: string
+        ownerName:
+          type: string
+        ownerPhone:
+          type: string
+          description: Populated ONLY if owner explicitly toggled showOwnerPhone ON
+        allowDirectCalls:
+          type: boolean
+        microchipNumber:
+          type: string
+          description: Populated if owner toggled showMicrochip ON
+        allergies:
+          type: string
+        criticalMedicalAlert:
+          type: string
+        specialInstructions:
+          type: string
+        emergencyContactName:
+          type: string
+        emergencyContactPhone:
+          type: string
+
+    ContactOwnerRequest:
+      type: object
+      required: [message]
+      properties:
+        finderName:
+          type: string
+        finderPhone:
+          type: string
+        finderEmail:
+          type: string
+        message:
+          type: string
+        approxLatitude:
+          type: number
+        approxLongitude:
+          type: number
+
+    ReportFoundRequest:
+      type: object
+      required: [message]
+      properties:
+        finderName:
+          type: string
+        finderPhone:
+          type: string
+        message:
+          type: string
+        foundAddress:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        photoUrl:
+          type: string
+
+    MarkLostRequest:
+      type: object
+      required: [lastSeenAddress]
+      properties:
+        lastSeenAddress:
+          type: string
+        lastSeenCity:
+          type: string
+        circumstances:
+          type: string
+        rewardAmount:
+          type: string
+
+    Vaccination:
+      type: object
+      properties:
+        id:
+          type: string
+        petId:
+          type: string
+        vaccineName:
+          type: string
+        administeredAt:
+          type: string
+          format: date
+        nextDueDate:
+          type: string
+          format: date
+        vetName:
+          type: string
+        clinicName:
+          type: string
+        batchLotNumber:
+          type: string
+        notes:
+          type: string
+
+    CreateVaccinationRequest:
+      type: object
+      required: [vaccineName, administeredAt]
+      properties:
+        vaccineName:
+          type: string
+        administeredAt:
+          type: string
+          format: date
+        nextDueDate:
+          type: string
+          format: date
+        vetName:
+          type: string
+        clinicName:
+          type: string
+        batchLotNumber:
+          type: string
+        manufacturer:
+          type: string
+        notes:
+          type: string
+
+    VaccinationType:
+      type: object
+      properties:
+        id:
+          type: string
+        species:
+          type: string
+        name:
+          type: string
+        code:
+          type: string
+        isCore:
+          type: boolean
+        recommendedIntervalMonths:
+          type: integer
+        description:
+          type: string
+
+    MedicalEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        petId:
+          type: string
+        eventType:
+          type: string
+        eventDate:
+          type: string
+          format: date
+        title:
+          type: string
+        diagnosis:
+          type: string
+        treatmentSummary:
+          type: string
+        vetName:
+          type: string
+        clinicName:
+          type: string
+        costAmount:
+          type: number
+
+    CreateMedicalEventRequest:
+      type: object
+      required: [eventType, eventDate, title]
+      properties:
+        eventType:
+          type: string
+        eventDate:
+          type: string
+          format: date
+        title:
+          type: string
+        diagnosis:
+          type: string
+        treatmentSummary:
+          type: string
+        vetName:
+          type: string
+        clinicName:
+          type: string
+        costAmount:
+          type: number
+
+    Medication:
+      type: object
+      properties:
+        id:
+          type: string
+        petId:
+          type: string
+        medicationName:
+          type: string
+        dosage:
+          type: string
+        frequency:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        prescribedBy:
+          type: string
+        isActive:
+          type: boolean
+
+    CreateMedicationRequest:
+      type: object
+      required: [medicationName, dosage, frequency, startDate]
+      properties:
+        medicationName:
+          type: string
+        dosage:
+          type: string
+        frequency:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        prescribedBy:
+          type: string
+
+    Reminder:
+      type: object
+      properties:
+        id:
+          type: string
+        petId:
+          type: string
+        petName:
+          type: string
+        reminderType:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        recurrence:
+          type: string
+        isCompleted:
+          type: boolean
+
+    CreateReminderRequest:
+      type: object
+      required: [petId, title, dueDate]
+      properties:
+        petId:
+          type: string
+        reminderType:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        recurrence:
+          type: string
+
+    TimelineEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        petId:
+          type: string
+        eventCategory:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        title:
+          type: string
+        description:
+          type: string
+        iconName:
+          type: string
+
+    PetDocument:
+      type: object
+      properties:
+        id:
+          type: string
+        petId:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+        fileUrl:
+          type: string
+        mimeType:
+          type: string
+        fileSizeBytes:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateDocumentRequest:
+      type: object
+      required: [title, category, storageKey, fileUrl, mimeType, fileSizeBytes]
+      properties:
+        title:
+          type: string
+        category:
+          type: string
+        storageKey:
+          type: string
+        fileUrl:
+          type: string
+        mimeType:
+          type: string
+        fileSizeBytes:
+          type: integer
+
+    PresignedUrlResponse:
+      type: object
+      properties:
+        uploadUrl:
+          type: string
+        fileUrl:
+          type: string
+        storageKey:
+          type: string
+        headers:
+          type: object
+
+    Vet:
+      type: object
+      properties:
+        id:
+          type: string
+        clinicName:
+          type: string
+        doctorName:
+          type: string
+        phoneNumber:
+          type: string
+        emergencyPhone:
+          type: string
+        email:
+          type: string
+        websiteUrl:
+          type: string
+        addressLine1:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        postalCode:
+          type: string
+        is24hEmergency:
+          type: boolean
+        rating:
+          type: number
+        reviewCount:
+          type: integer
+        distanceKm:
+          type: number
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        notificationType:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time

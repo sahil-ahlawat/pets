@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vaccinations & Boosters — PetIdentity</title>
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <div id="navbar-container"></div>
+
+  <div class="dashboard-layout">
+    <aside class="dashboard-sidebar">
+      <div style="margin-bottom: 24px;">
+        <label class="form-label" style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-text-subtle);">Active Companion</label>
+        <select id="global-pet-switcher" class="form-control" style="font-weight: 600;">
+          <option>Loading pets...</option>
+        </select>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li class="sidebar-item"><a href="/pages/dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="/pages/pet.html">🐾 Pet Profile & Identity</a></li>
+        <li class="sidebar-item"><a href="/pages/qr-manage.html">🏷️ QR Collar Tag</a></li>
+        <li class="sidebar-item active"><a href="/pages/vaccinations.html">💉 Vaccinations</a></li>
+        <li class="sidebar-item"><a href="/pages/medical.html">🩺 Medical History</a></li>
+        <li class="sidebar-item"><a href="/pages/reminders.html">⏰ Reminders</a></li>
+        <li class="sidebar-item"><a href="/pages/documents.html">📁 Documents</a></li>
+        <li class="sidebar-item"><a href="/pages/lost-found.html">🚨 Lost & Found Hub</a></li>
+        <li class="sidebar-item"><a href="/pages/vets.html">🏥 Find Nearby Vets</a></li>
+      </ul>
+    </aside>
+
+    <main class="dashboard-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <h2>Vaccination & Booster Records</h2>
+          <p style="color: var(--color-text-muted);">Track core and non-core vaccines, lot numbers, and automated booster countdowns.</p>
+        </div>
+        <button onclick="window.ui.openModal('modal-add-vac')" class="btn btn-primary btn-sm">+ Record Vaccination</button>
+      </div>
+
+      <!-- Vaccinations List -->
+      <div class="card" style="margin-bottom: 30px;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--color-border); font-size: 0.85rem; text-transform: uppercase; color: var(--color-text-subtle);">
+              <th style="padding: 12px 16px;">Vaccine</th>
+              <th style="padding: 12px 16px;">Date Given</th>
+              <th style="padding: 12px 16px;">Next Due Date</th>
+              <th style="padding: 12px 16px;">Clinic / Vet</th>
+              <th style="padding: 12px 16px;">Batch / Lot</th>
+            </tr>
+          </thead>
+          <tbody id="vaccinations-tbody">
+            <tr>
+              <td colspan="5" style="padding: 24px; text-align: center; color: var(--color-text-muted);">Loading records...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Core Vaccine Guide -->
+      <div class="card" style="background: var(--color-bg-subtle);">
+        <h4 style="margin-bottom: 8px;">Standard Recommended Vaccines Catalog</h4>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 16px;">Standard protocols approved by the World Small Animal Veterinary Association (WSAVA).</p>
+        <div id="catalog-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px;">
+          <!-- Loaded via API -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: Add Vaccination -->
+  <div id="modal-add-vac" class="modal-overlay">
+    <div class="modal-dialog">
+      <h3 style="margin-bottom: 16px;">Record Vaccine Dose</h3>
+      <form id="form-vac">
+        <div class="form-group">
+          <label class="form-label">Vaccine Name *</label>
+          <input type="text" id="vacName" class="form-control" placeholder="e.g. Rabies 3-Year Booster" required>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label">Date Administered *</label>
+            <input type="date" id="vacAdminDate" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Next Due Date</label>
+            <input type="date" id="vacNextDate" class="form-control">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label">Clinic Name</label>
+            <input type="text" id="vacClinic" class="form-control" placeholder="e.g. MetroVet Emergency">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Doctor / Vet Name</label>
+            <input type="text" id="vacVet" class="form-control" placeholder="e.g. Dr. Elena">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Batch / Lot Number</label>
+          <input type="text" id="vacBatch" class="form-control" placeholder="e.g. LOT-998231B">
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button type="button" onclick="window.ui.closeModal('modal-add-vac')" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+          <button type="submit" id="btn-save-vac" class="btn btn-primary" style="flex: 1;">Save Vaccine Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    window.auth.requireAuth();
+
+    async function loadVaccinations() {
+      const petId = localStorage.getItem('active_pet_id');
+      if (!petId) return;
+
+      try {
+        const vacs = await window.api.getVaccinations(petId);
+        const tbody = document.getElementById('vaccinations-tbody');
+
+        if (!vacs || vacs.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" style="padding: 32px; text-align: center; color: var(--color-text-muted);">
+                No vaccinations recorded yet. Click <strong>+ Record Vaccination</strong> to add your pet's shots.
+              </td>
+            </tr>
+          `;
+        } else {
+          tbody.innerHTML = vacs.map(v => `
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: 14px 16px;"><strong>💉 ${v.vaccineName}</strong></td>
+              <td style="padding: 14px 16px;">${window.ui.formatDate(v.administeredAt)}</td>
+              <td style="padding: 14px 16px;">
+                ${v.nextDueDate ? `<span style="color: var(--color-primary); font-weight: 600;">${window.ui.formatDate(v.nextDueDate)}</span>` : 'N/A'}
+              </td>
+              <td style="padding: 14px 16px;">${v.clinicName || v.vetName || '—'}</td>
+              <td style="padding: 14px 16px; font-family: monospace; font-size: 0.85rem;">${v.batchLotNumber || '—'}</td>
+            </tr>
+          `).join('');
+        }
+
+        // Load catalog types
+        const types = await window.api.getVaccinationTypes('');
+        const catalogDiv = document.getElementById('catalog-list');
+        if (types && types.length > 0) {
+          catalogDiv.innerHTML = types.map(t => `
+            <div style="background: white; padding: 14px; border-radius: 10px; border: 1px solid var(--color-border);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <strong>${t.name}</strong>
+                <span class="badge ${t.isCore ? 'badge-active' : ''}">${t.isCore ? 'Core' : 'Optional'}</span>
+              </div>
+              <div style="color: var(--color-text-muted); font-size: 0.8rem;">${t.description || ''}</div>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    document.getElementById('form-vac').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const petId = localStorage.getItem('active_pet_id');
+      const btn = document.getElementById('btn-save-vac');
+
+      const payload = {
+        vaccineName: document.getElementById('vacName').value.trim(),
+        administeredAt: document.getElementById('vacAdminDate').value,
+        nextDueDate: document.getElementById('vacNextDate').value || null,
+        clinicName: document.getElementById('vacClinic').value.trim(),
+        vetName: document.getElementById('vacVet').value.trim(),
+        batchLotNumber: document.getElementById('vacBatch').value.trim(),
+      };
+
+      try {
+        btn.disabled = true;
+        await window.api.createVaccination(petId, payload);
+        window.ui.closeModal('modal-add-vac');
+        window.ui.showToast('Vaccination recorded!', 'success');
+        loadVaccinations();
+      } catch (err) {
+        window.ui.showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    loadVaccinations();
+  </script>
+</body>
+</html>

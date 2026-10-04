@@ -1,0 +1,14 @@
+apiVersion: v2
+name: pet-platform
+description: Helm chart for Pet Digital Identity Platform (API, Workers, Scheduler)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - pet-identity
+  - go
+  - outbox
+  - kubernetes
+maintainers:
+  - name: Platform DevOps
+    email: devops@petidentity.com

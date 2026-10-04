@@ -1,0 +1,26 @@
+# values-dev.yaml
+global:
+  environment: development
+
+api:
+  replicaCount: 1
+  hpa:
+    enabled: false
+  pdb:
+    enabled: false
+
+worker:
+  replicaCount: 1
+
+scheduler:
+  replicaCount: 1
+
+ingress:
+  hosts:
+    - host: api.dev.petidentity.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+config:
+  publicBaseUrl: "https://dev.petidentity.com"

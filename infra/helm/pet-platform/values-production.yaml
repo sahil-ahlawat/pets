@@ -1,0 +1,27 @@
+# values-production.yaml
+global:
+  environment: production
+
+api:
+  replicaCount: 5
+  hpa:
+    enabled: true
+    minReplicas: 5
+    maxReplicas: 30
+    targetCPUUtilizationPercentage: 70
+  pdb:
+    enabled: true
+    minAvailable: 3
+
+worker:
+  replicaCount: 4
+
+scheduler:
+  replicaCount: 1
+
+ingress:
+  hosts:
+    - host: api.petidentity.com
+      paths:
+        - path: /
+          pathType: Prefix

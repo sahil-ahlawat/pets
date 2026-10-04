@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veterinary Discovery & Emergency Clinics — PetIdentity</title>
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <div id="navbar-container"></div>
+
+  <div class="container" style="padding: 40px 20px;">
+    <div style="margin-bottom: 30px;">
+      <h2>Find Veterinary Practices & 24/7 Hospitals</h2>
+      <p style="color: var(--color-text-muted);">Locate verified veterinary centers, specialty trauma clinics, and emergency hospitals near you.</p>
+    </div>
+
+    <!-- Search Controls -->
+    <div class="card" style="margin-bottom: 30px; padding: 20px;">
+      <div style="display: grid; grid-template-columns: 2fr 1fr auto auto; gap: 16px; align-items: end;">
+        <div>
+          <label class="form-label">Search Clinic or Doctor</label>
+          <input type="text" id="vet-query" class="form-control" placeholder="e.g. Emergency, Surgery, Dr. Elena">
+        </div>
+        <div>
+          <label class="form-label">City / Region</label>
+          <input type="text" id="vet-city" class="form-control" placeholder="e.g. San Francisco">
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; padding-bottom: 10px;">
+          <input type="checkbox" id="vet-emergency" style="width: 20px; height: 20px;">
+          <label for="vet-emergency" style="font-weight: 600; font-size: 0.9rem; cursor: pointer;">🚨 24/7 Emergency Only</label>
+        </div>
+        <div>
+          <button onclick="searchVets()" class="btn btn-primary" style="height: 48px;">Search Clinics</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results List -->
+    <div id="vets-results" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px;">
+      <p style="color: var(--color-text-muted); grid-column: 1 / -1; text-align: center; padding: 40px;">Searching veterinary network...</p>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    async function searchVets() {
+      const q = document.getElementById('vet-query').value.trim();
+      const city = document.getElementById('vet-city').value.trim();
+      const emerg = document.getElementById('vet-emergency').checked;
+
+      try {
+        const vets = await window.api.getVets(q, city, emerg);
+        const resultsDiv = document.getElementById('vets-results');
+
+        if (!vets || vets.length === 0) {
+          resultsDiv.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1;">
+              <div class="empty-state-icon">🏥</div>
+              <h4>No Veterinary Clinics Found</h4>
+              <p style="color: var(--color-text-muted); font-size: 0.9rem; margin-top: 4px;">Try loosening search filters or expanding your geographic area.</p>
+            </div>
+          `;
+          return;
+        }
+
+        resultsDiv.innerHTML = vets.map(v => `
+          <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                <h4 style="font-size: 1.15rem;">${v.clinicName}</h4>
+                ${v.is24hEmergency ? '<span class="badge badge-lost">🚨 24H Emergency</span>' : '<span class="badge badge-active">Verified</span>'}
+              </div>
+              <div style="color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 12px;">
+                ${v.doctorName ? `👨‍⚕️ ${v.doctorName}<br>` : ''}
+                📍 ${v.addressLine1}, ${v.city}
+              </div>
+
+              ${v.specializations && v.specializations.length > 0 ? `
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px;">
+                  ${v.specializations.map(s => `<span style="background: var(--color-bg-muted); font-size: 0.75rem; padding: 2px 8px; border-radius: 999px;">${s}</span>`).join('')}
+                </div>
+              ` : ''}
+            </div>
+
+            <div style="border-top: 1px solid var(--color-border); padding-top: 14px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong style="color: var(--color-primary); font-size: 0.95rem;">★ ${v.rating || 5.0}</strong>
+                <span style="color: var(--color-text-muted); font-size: 0.8rem;">(${v.reviewCount || 0} reviews)</span>
+              </div>
+              <a href="tel:${v.emergencyPhone || v.phoneNumber}" class="btn btn-secondary btn-sm">📞 ${v.emergencyPhone || v.phoneNumber}</a>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    searchVets();
+  </script>
+</body>
+</html>

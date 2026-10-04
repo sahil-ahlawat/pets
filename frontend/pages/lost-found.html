@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lost & Found Emergency Network — PetIdentity</title>
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <div id="navbar-container"></div>
+
+  <div class="dashboard-layout">
+    <aside class="dashboard-sidebar">
+      <div style="margin-bottom: 24px;">
+        <label class="form-label" style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-text-subtle);">Active Companion</label>
+        <select id="global-pet-switcher" class="form-control" style="font-weight: 600;">
+          <option>Loading pets...</option>
+        </select>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li class="sidebar-item"><a href="/pages/dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="/pages/pet.html">🐾 Pet Profile & Identity</a></li>
+        <li class="sidebar-item"><a href="/pages/qr-manage.html">🏷️ QR Collar Tag</a></li>
+        <li class="sidebar-item"><a href="/pages/vaccinations.html">💉 Vaccinations</a></li>
+        <li class="sidebar-item"><a href="/pages/medical.html">🩺 Medical History</a></li>
+        <li class="sidebar-item"><a href="/pages/reminders.html">⏰ Reminders</a></li>
+        <li class="sidebar-item"><a href="/pages/documents.html">📁 Documents</a></li>
+        <li class="sidebar-item active"><a href="/pages/lost-found.html">🚨 Lost & Found Hub</a></li>
+        <li class="sidebar-item"><a href="/pages/vets.html">🏥 Find Nearby Vets</a></li>
+      </ul>
+    </aside>
+
+    <main class="dashboard-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <h2>Lost & Found Network</h2>
+          <p style="color: var(--color-text-muted);">Activate Lost Mode emergency broadcasts, view scan alerts, and community recovery reports.</p>
+        </div>
+        <button onclick="window.ui.openModal('modal-lost-mode')" class="btn btn-danger btn-sm">🚨 Activate Lost Mode</button>
+      </div>
+
+      <!-- Emergency Active Alert Card (if pet is lost) -->
+      <div id="lost-alert-card" class="card" style="display: none; background: var(--color-danger-light); border-color: rgba(225, 29, 72, 0.3); margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <span class="badge badge-lost">🚨 Emergency Lost Mode Active</span>
+            <h3 style="color: #9f1239; margin-top: 6px;" id="lost-pet-title">Companion Reported Missing</h3>
+            <p style="color: #881337; font-size: 0.9rem; margin-top: 4px;" id="lost-pet-details">Broadcast active. Collar QR displays emergency alerts to anyone scanning.</p>
+          </div>
+          <button onclick="reunitePet()" class="btn btn-primary btn-sm">🎉 Mark Safely Reunited</button>
+        </div>
+      </div>
+
+      <!-- Community Search & Safety Guidelines -->
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+        <div class="card">
+          <h4 style="margin-bottom: 16px;">Emergency Recovery Protocol</h4>
+          <div style="display: flex; flex-direction: column; gap: 16px; font-size: 0.95rem; line-height: 1.6; color: var(--color-text-muted);">
+            <div>
+              <strong style="color: var(--color-text-main);">1. Keep Emergency Mode Active</strong>
+              <p>When someone scans your pet's collar tag, their smartphone captures approximate location coordinates and pings you immediately via push notification and email.</p>
+            </div>
+            <div>
+              <strong style="color: var(--color-text-main);">2. Safe Finder Communication</strong>
+              <p>Finders can send secure messages without seeing your home address. If you've enabled direct calls in your Privacy Shield, they can call your verified number instantly.</p>
+            </div>
+            <div>
+              <strong style="color: var(--color-text-main);">3. Local Clinic & Shelter Alerts</strong>
+              <p>Our background workers automatically flag your pet's microchip number in the regional veterinary registry so any clinic scanning the chip detects the missing report.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="background: var(--color-bg-subtle);">
+          <h4 style="margin-bottom: 12px;">Need Help?</h4>
+          <p style="color: var(--color-text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 16px;">
+            If you need search volunteers or social media rescue flyers generated automatically:
+          </p>
+          <a href="/pages/vets.html" class="btn btn-secondary btn-sm" style="width: 100%; margin-bottom: 8px;">🏥 Contact Local Animal Hospitals</a>
+          <a href="/pages/pet.html" class="btn btn-outline btn-sm" style="width: 100%;">⚙️ Check Privacy Settings</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: Activate Lost Mode -->
+  <div id="modal-lost-mode" class="modal-overlay">
+    <div class="modal-dialog">
+      <h3 style="color: var(--color-danger); margin-bottom: 8px;">🚨 Activate Lost Mode</h3>
+      <p style="color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+        This alters your pet's public QR page into an emergency screen and broadcasts an alert to the local community.
+      </p>
+
+      <form id="form-lost-mode">
+        <div class="form-group">
+          <label class="form-label">Last Seen Location / Address *</label>
+          <input type="text" id="lostAddress" class="form-control" placeholder="e.g. 5th Ave & Pine Street, Seattle" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reward Amount (Optional)</label>
+          <input type="text" id="lostReward" class="form-control" placeholder="e.g. $250 Reward">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Circumstances / Description</label>
+          <textarea id="lostCircumstances" class="form-control" placeholder="Slipped collar at park. Extremely friendly, loves treats."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button type="button" onclick="window.ui.closeModal('modal-lost-mode')" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+          <button type="submit" class="btn btn-danger" style="flex: 1;">Activate Emergency Alert 🚨</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    window.auth.requireAuth();
+
+    let currentPetId = '';
+
+    async function checkLostStatus() {
+      currentPetId = localStorage.getItem('active_pet_id');
+      if (!currentPetId) return;
+
+      try {
+        const pet = await window.api.getPet(currentPetId);
+        if (pet.status === 'LOST') {
+          document.getElementById('lost-alert-card').style.display = 'block';
+          document.getElementById('lost-pet-title').innerText = `${pet.name} is Reported LOST`;
+        } else {
+          document.getElementById('lost-alert-card').style.display = 'none';
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function reunitePet() {
+      if (!confirm('Mark companion safely reunited with family?')) return;
+      try {
+        await window.api.markPetReunited(currentPetId);
+        window.ui.showToast('Reunion confirmed! Emergency mode deactivated.', 'success');
+        checkLostStatus();
+      } catch (err) {
+        window.ui.showToast(err.message, 'error');
+      }
+    }
+
+    document.getElementById('form-lost-mode').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        lastSeenAddress: document.getElementById('lostAddress').value.trim(),
+        rewardAmount: document.getElementById('lostReward').value.trim(),
+        circumstances: document.getElementById('lostCircumstances').value.trim(),
+      };
+
+      try {
+        await window.api.markPetLost(currentPetId, payload);
+        window.ui.closeModal('modal-lost-mode');
+        window.ui.showToast('Emergency Lost Mode activated!', 'success');
+        checkLostStatus();
+      } catch (err) {
+        window.ui.showToast(err.message, 'error');
+      }
+    });
+
+    checkLostStatus();
+  </script>
+</body>
+</html>

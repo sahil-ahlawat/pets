@@ -1,0 +1,91 @@
+# Default values for pet-platform
+global:
+  environment: production
+
+serviceAccount:
+  create: true
+  name: "pet-platform-sa"
+
+api:
+  replicaCount: 3
+  image:
+    repository: petplatform/api
+    pullPolicy: IfNotPresent
+    tag: "1.0.0"
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 128Mi
+  hpa:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 75
+  pdb:
+    enabled: true
+    minAvailable: 2
+
+worker:
+  replicaCount: 2
+  image:
+    repository: petplatform/worker
+    pullPolicy: IfNotPresent
+    tag: "1.0.0"
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 64Mi
+
+scheduler:
+  replicaCount: 1
+  image:
+    repository: petplatform/worker
+    pullPolicy: IfNotPresent
+    tag: "1.0.0"
+  resources:
+    limits:
+      cpu: 250m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: api.petidentity.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: pet-platform-tls
+      hosts:
+        - api.petidentity.com
+
+config:
+  port: "8080"
+  publicBaseUrl: "https://petidentity.com"
+  s3Bucket: "pet-identity-production-assets"
+  s3Region: "us-east-1"
+  allowedOrigins: "https://petidentity.com,https://app.petidentity.com"
+
+# External Database & Redis Connections (Managed Cloud Services)
+externalDatabase:
+  host: "managed-postgres.internal"
+  port: 5432
+  name: "pet_platform_prod"
+  user: "pet_admin"
+
+externalRedis:
+  host: "managed-redis.internal"
+  port: 6379

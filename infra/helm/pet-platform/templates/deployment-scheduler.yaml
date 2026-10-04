@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pet-platform.fullname" . }}-scheduler
+  labels:
+    app.kubernetes.io/component: scheduler
+    {{- include "pet-platform.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: scheduler
+      {{- include "pet-platform.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: scheduler
+        {{- include "pet-platform.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      containers:
+        - name: scheduler
+          image: "{{ .Values.scheduler.image.repository }}:{{ .Values.scheduler.image.tag }}"
+          imagePullPolicy: {{ .Values.scheduler.image.pullPolicy }}
+          command: ["/usr/local/bin/pet-scheduler"]
+          envFrom:
+            - configMapRef:
+                name: {{ include "pet-platform.fullname" . }}-config
+            - secretRef:
+                name: {{ include "pet-platform.fullname" . }}-secrets
+          resources:
+            {{- toYaml .Values.scheduler.resources | nindent 12 }}

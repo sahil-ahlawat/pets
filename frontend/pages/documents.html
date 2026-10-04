@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Document Vault — PetIdentity</title>
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <div id="navbar-container"></div>
+
+  <div class="dashboard-layout">
+    <aside class="dashboard-sidebar">
+      <div style="margin-bottom: 24px;">
+        <label class="form-label" style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-text-subtle);">Active Companion</label>
+        <select id="global-pet-switcher" class="form-control" style="font-weight: 600;">
+          <option>Loading pets...</option>
+        </select>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li class="sidebar-item"><a href="/pages/dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="/pages/pet.html">🐾 Pet Profile & Identity</a></li>
+        <li class="sidebar-item"><a href="/pages/qr-manage.html">🏷️ QR Collar Tag</a></li>
+        <li class="sidebar-item"><a href="/pages/vaccinations.html">💉 Vaccinations</a></li>
+        <li class="sidebar-item"><a href="/pages/medical.html">🩺 Medical History</a></li>
+        <li class="sidebar-item"><a href="/pages/reminders.html">⏰ Reminders</a></li>
+        <li class="sidebar-item active"><a href="/pages/documents.html">📁 Documents</a></li>
+        <li class="sidebar-item"><a href="/pages/lost-found.html">🚨 Lost & Found Hub</a></li>
+        <li class="sidebar-item"><a href="/pages/vets.html">🏥 Find Nearby Vets</a></li>
+      </ul>
+    </aside>
+
+    <main class="dashboard-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <h2>Encrypted Document Vault</h2>
+          <p style="color: var(--color-text-muted);">Rabies certificates, adoption contracts, pet insurance policies, and surgical reports stored in private object storage.</p>
+        </div>
+        <button onclick="window.ui.openModal('modal-upload-doc')" class="btn btn-primary btn-sm">+ Upload Document</button>
+      </div>
+
+      <div class="card">
+        <div id="documents-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
+          <p style="color: var(--color-text-muted); grid-column: 1 / -1; text-align: center; padding: 24px;">Loading documents...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: Upload Document -->
+  <div id="modal-upload-doc" class="modal-overlay">
+    <div class="modal-dialog">
+      <h3 style="margin-bottom: 16px;">Upload Companion Document</h3>
+      <form id="form-doc">
+        <div class="form-group">
+          <label class="form-label">Document Title *</label>
+          <input type="text" id="docTitle" class="form-control" placeholder="e.g. 2026 Rabies Travel Certificate" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category *</label>
+          <select id="docCategory" class="form-control" required>
+            <option value="VACCINE_CERT">Vaccination Certificate</option>
+            <option value="INSURANCE">Insurance Policy</option>
+            <option value="ADOPTION_PAPERS">Adoption / Pedigree Papers</option>
+            <option value="LAB_RESULT">Blood Test / Lab Result</option>
+            <option value="PRESCRIPTION">Prescription Document</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">File URL or Upload *</label>
+          <input type="url" id="docUrl" class="form-control" placeholder="https://storage.petidentity.com/documents/..." required>
+          <small style="color: var(--color-text-muted); font-size: 0.75rem;">Uses direct S3 / R2 presigned URLs in production.</small>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button type="button" onclick="window.ui.closeModal('modal-upload-doc')" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1;">Save to Vault</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    window.auth.requireAuth();
+
+    async function loadDocuments() {
+      const petId = localStorage.getItem('active_pet_id');
+      if (!petId) return;
+
+      try {
+        const docs = await window.api.getDocuments(petId);
+        const grid = document.getElementById('documents-grid');
+
+        if (!docs || docs.length === 0) {
+          grid.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1; padding: 30px;">
+              <div class="empty-state-icon">📁</div>
+              <h4>No Documents Uploaded</h4>
+              <p style="color: var(--color-text-muted); font-size: 0.9rem; margin-top: 4px;">Safely store certificates and medical tests for boarding and travel.</p>
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = docs.map(d => `
+          <div style="background: var(--color-bg-subtle); border: 1px solid var(--color-border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <span class="badge badge-active" style="margin-bottom: 8px;">${d.category}</span>
+              <h4 style="font-size: 1rem; margin-bottom: 4px;">${d.title}</h4>
+              <div style="font-size: 0.8rem; color: var(--color-text-muted);">Uploaded: ${window.ui.formatDate(d.createdAt)}</div>
+            </div>
+            <div style="margin-top: 16px;">
+              <a href="${d.fileUrl}" target="_blank" class="btn btn-secondary btn-sm" style="width: 100%;">View Document ↗</a>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    document.getElementById('form-doc').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const petId = localStorage.getItem('active_pet_id');
+      const payload = {
+        title: document.getElementById('docTitle').value.trim(),
+        category: document.getElementById('docCategory').value,
+        fileUrl: document.getElementById('docUrl').value.trim(),
+        storageKey: `docs/${Date.now()}`,
+        mimeType: 'application/pdf',
+        fileSizeBytes: 204800,
+      };
+
+      try {
+        await window.api.saveDocument(petId, payload);
+        window.ui.closeModal('modal-upload-doc');
+        window.ui.showToast('Document saved to encrypted vault!', 'success');
+        loadDocuments();
+      } catch (err) {
+        window.ui.showToast(err.message, 'error');
+      }
+    });
+
+    loadDocuments();
+  </script>
+</body>
+</html>

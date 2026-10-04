@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pet Digital Identity — Collar Scan Profile</title>
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    .emergency-banner {
+      background: linear-gradient(135deg, #e11d48, #be123c);
+      color: white;
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      margin-bottom: 24px;
+      box-shadow: 0 10px 25px rgba(225, 29, 72, 0.35);
+      animation: pulse-danger 2s infinite ease-in-out;
+    }
+    .profile-hero-card {
+      background: white;
+      border-radius: var(--radius-xl);
+      padding: 32px 24px;
+      text-align: center;
+      box-shadow: var(--shadow-xl);
+      border: 1px solid var(--color-border);
+      position: relative;
+    }
+    .pet-portrait {
+      width: 140px;
+      height: 140px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      background: var(--color-primary-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4rem;
+      border: 5px solid white;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+    .action-btn-block {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 28px 0;
+    }
+    @media (max-width: 600px) {
+      .action-btn-block { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body style="background-color: #f8fafc; padding-bottom: 60px;">
+  <!-- Minimalist Brand Header -->
+  <header style="background: white; border-bottom: 1px solid var(--color-border); padding: 16px 0; text-align: center; margin-bottom: 30px;">
+    <div class="brand-logo" style="justify-content: center;">
+      <div class="logo-icon">🐾</div>
+      <span>PetIdentity</span>
+      <span style="font-size: 0.75rem; background: var(--color-bg-muted); padding: 2px 8px; border-radius: 999px; color: var(--color-text-muted); margin-left: 8px;">Official Tag Scan</span>
+    </div>
+  </header>
+
+  <div class="container container-sm">
+    <!-- Emergency Lost Banner (Hidden unless pet is LOST) -->
+    <div id="lost-banner" class="emergency-banner" style="display: none;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+        <span style="font-size: 1.8rem;">🚨</span>
+        <h2 style="color: white; font-size: 1.5rem;">THIS PET IS REPORTED LOST</h2>
+      </div>
+      <p id="lost-desc" style="opacity: 0.95; font-size: 0.95rem; margin-bottom: 12px;">The owner is searching for this pet. Please help reunite them safely.</p>
+      <div style="background: rgba(0, 0, 0, 0.2); padding: 10px 14px; border-radius: 8px; font-size: 0.85rem;">
+        📍 Last reported: <strong id="lost-address">Unknown</strong>
+      </div>
+    </div>
+
+    <!-- Main Public Profile Card -->
+    <div class="profile-hero-card">
+      <div id="pet-avatar" class="pet-portrait">🐾</div>
+      <h1 id="pet-name" style="font-size: 2.2rem; margin-bottom: 6px;">Loading Pet...</h1>
+      <p id="pet-species-breed" style="color: var(--color-text-muted); font-size: 1.05rem; margin-bottom: 16px;"></p>
+      
+      <div id="pet-status-container" style="margin-bottom: 20px;"></div>
+
+      <!-- Action Buttons for Finder -->
+      <div class="action-btn-block">
+        <button onclick="openFoundModal()" class="btn btn-primary btn-lg" style="box-shadow: 0 4px 15px rgba(13, 148, 136, 0.35);">
+          📍 I Found This Pet
+        </button>
+        <button onclick="openContactModal()" class="btn btn-secondary btn-lg">
+          💬 Message Owner
+        </button>
+      </div>
+
+      <div id="direct-call-container" style="margin-bottom: 24px; display: none;">
+        <a id="direct-call-btn" href="#" class="btn btn-primary" style="background-color: #065f46; width: 100%;">
+          📞 Call Owner Directly
+        </a>
+      </div>
+
+      <!-- Emergency Medical & Care Notes -->
+      <div style="text-align: left; background: var(--color-bg-canvas); padding: 20px; border-radius: var(--radius-lg); margin-top: 24px;">
+        <h4 style="margin-bottom: 12px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+          <span>🩺</span> Vital Care & Allergies
+        </h4>
+        <div id="allergies-content" style="color: var(--color-text-main); font-size: 0.95rem; line-height: 1.5;">
+          No critical health warnings registered.
+        </div>
+      </div>
+
+      <!-- Microchip Info (If visible) -->
+      <div id="microchip-box" style="text-align: left; background: var(--color-bg-subtle); padding: 16px 20px; border-radius: var(--radius-lg); margin-top: 16px; display: none;">
+        <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-text-subtle);">Microchip Identifier</div>
+        <div id="microchip-number" style="font-family: monospace; font-weight: 700; font-size: 1.1rem; margin-top: 4px; color: var(--color-text-main);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 1: Report Found Pet (With GPS Location Capture) -->
+  <div id="modal-found" class="modal-overlay">
+    <div class="modal-dialog">
+      <h3 style="margin-bottom: 8px;">Report Found Pet</h3>
+      <p style="color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+        Your location coordinates will help the owner pinpoint where their companion was spotted.
+      </p>
+
+      <form id="form-found">
+        <div class="form-group">
+          <label class="form-label">Your Name (Optional)</label>
+          <input type="text" id="found-finder-name" class="form-control" placeholder="e.g. Alex">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your Phone or Email (Optional)</label>
+          <input type="text" id="found-finder-phone" class="form-control" placeholder="So owner can reach you">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Where did you find this pet? *</label>
+          <input type="text" id="found-address" class="form-control" placeholder="e.g., Central Park near the fountain" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message / Details *</label>
+          <textarea id="found-message" class="form-control" placeholder="Pet is safe with me on a leash. Wearing a red collar." required></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button type="button" onclick="window.ui.closeModal('modal-found')" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+          <button type="submit" id="btn-submit-found" class="btn btn-primary" style="flex: 1;">Send Report 🚀</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Contact Owner -->
+  <div id="modal-contact" class="modal-overlay">
+    <div class="modal-dialog">
+      <h3 style="margin-bottom: 8px;">Contact Owner</h3>
+      <p style="color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+        Send a secure message directly to the registered owner's phone via instant notification.
+      </p>
+
+      <form id="form-contact">
+        <div class="form-group">
+          <label class="form-label">Your Name</label>
+          <input type="text" id="contact-name" class="form-control" placeholder="Your name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your Contact Number / Email</label>
+          <input type="text" id="contact-info" class="form-control" placeholder="How owner can get back to you">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your Message *</label>
+          <textarea id="contact-message" class="form-control" placeholder="Hi! I have Bruno here safe with me..." required></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button type="button" onclick="window.ui.closeModal('modal-contact')" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+          <button type="submit" id="btn-submit-contact" class="btn btn-primary" style="flex: 1;">Send Message</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    let token = '';
+    let currentCoords = null;
+
+    // Capture geolocation coordinates silently for scan accuracy
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { currentCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude }; loadProfile(); },
+        () => { loadProfile(); },
+        { timeout: 4000 }
+      );
+    } else {
+      loadProfile();
+    }
+
+    async function loadProfile() {
+      const urlParams = new URLSearchParams(window.location.search);
+      token = urlParams.get('token');
+
+      // Demo fallback if token not in URL
+      if (!token) {
+        token = 'demo-bruno';
+      }
+
+      try {
+        const pet = await window.api.getPublicPet(token, currentCoords);
+        renderPetProfile(pet);
+      } catch (err) {
+        document.getElementById('pet-name').innerText = 'Pet Tag Inactive or Revoked';
+        document.getElementById('pet-species-breed').innerText = 'This collar QR tag is no longer active in our registry.';
+      }
+    }
+
+    function renderPetProfile(pet) {
+      document.getElementById('pet-name').innerText = pet.name;
+      document.getElementById('pet-species-breed').innerText = `${pet.species} • ${pet.breed || 'Beloved Companion'}`;
+      document.getElementById('pet-status-container').innerHTML = window.ui.getStatusBadge(pet.status);
+
+      if (pet.avatarUrl) {
+        document.getElementById('pet-avatar').innerHTML = `<img src="${pet.avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;" alt="${pet.name}">`;
+      }
+
+      // Lost Mode Banner
+      if (pet.status === 'LOST') {
+        const banner = document.getElementById('lost-banner');
+        banner.style.display = 'block';
+        if (pet.lostDetails) {
+          document.getElementById('lost-address').innerText = pet.lostDetails.lastSeenAddress;
+          if (pet.lostDetails.rewardAmount) {
+            document.getElementById('lost-desc').innerText = `REWARD OFFERED: ${pet.lostDetails.rewardAmount}. ${pet.lostDetails.circumstances || ''}`;
+          }
+        }
+      }
+
+      // Direct phone call (if allowed)
+      if (pet.allowDirectCalls && pet.ownerPhone) {
+        const callBox = document.getElementById('direct-call-container');
+        callBox.style.display = 'block';
+        document.getElementById('direct-call-btn').href = `tel:${pet.ownerPhone}`;
+        document.getElementById('direct-call-btn').innerText = `📞 Call Owner (${pet.ownerPhone})`;
+      }
+
+      // Allergies & Notes
+      if (pet.allergies || pet.criticalMedicalAlert) {
+        document.getElementById('allergies-content').innerHTML = `
+          <strong>${pet.criticalMedicalAlert || ''}</strong>
+          <div style="margin-top: 4px;">${pet.allergies || ''}</div>
+        `;
+      }
+
+      // Microchip
+      if (pet.microchipNumber) {
+        document.getElementById('microchip-box').style.display = 'block';
+        document.getElementById('microchip-number').innerText = pet.microchipNumber;
+      }
+    }
+
+    function openFoundModal() { window.ui.openModal('modal-found'); }
+    function openContactModal() { window.ui.openModal('modal-contact'); }
+
+    // Submit Found Report
+    document.getElementById('form-found').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-submit-found');
+      const payload = {
+        finderName: document.getElementById('found-finder-name').value.trim(),
+        finderPhone: document.getElementById('found-finder-phone').value.trim(),
+        foundAddress: document.getElementById('found-address').value.trim(),
+        message: document.getElementById('found-message').value.trim(),
+        latitude: currentCoords ? currentCoords.lat : null,
+        longitude: currentCoords ? currentCoords.lng : null,
+      };
+
+      try {
+        btn.disabled = true;
+        btn.innerText = 'Transmitting Alert...';
+        await window.api.reportFound(token, payload);
+        window.ui.closeModal('modal-found');
+        window.ui.showToast('Report submitted! Pet owner alerted instantly.', 'success', 6000);
+      } catch (err) {
+        window.ui.showToast(err.message, 'error');
+        btn.disabled = false;
+        btn.innerText = 'Send Report 🚀';
+      }
+    });
+
+    // Submit Message to Owner
+    document.getElementById('form-contact').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-submit-contact');
+      const payload = {
+        finderName: document.getElementById('contact-name').value.trim(),
+        finderPhone: document.getElementById('contact-info').value.trim(),
+        message: document.getElementById('contact-message').value.trim(),
+        approxLatitude: currentCoords ? currentCoords.lat : null,
+        approxLongitude: currentCoords ? currentCoords.lng : null,
+      };
+
+      try {
+        btn.disabled = true;
+        btn.innerText = 'Sending...';
+        await window.api.contactOwner(token, payload);
+        window.ui.closeModal('modal-contact');
+        window.ui.showToast('Message safely delivered to pet owner.', 'success');
+      } catch (err) {
+        window.ui.showToast(err.message, 'error');
+        btn.disabled = false;
+        btn.innerText = 'Send Message';
+      }
+    });
+  </script>
+</body>
+</html>

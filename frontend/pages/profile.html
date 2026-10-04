@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Settings & Security — PetIdentity</title>
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <div id="navbar-container"></div>
+
+  <div class="container container-sm" style="padding: 40px 20px;">
+    <div style="margin-bottom: 24px;">
+      <h2>Account & Security Settings</h2>
+      <p style="color: var(--color-text-muted);">Manage your owner profile, notification preferences, and global emergency privacy controls.</p>
+    </div>
+
+    <!-- User Profile Card -->
+    <div class="card" style="margin-bottom: 24px;">
+      <h4 style="margin-bottom: 16px;">Owner Information</h4>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div style="background: var(--color-bg-subtle); padding: 14px; border-radius: 12px;">
+          <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-text-subtle);">Full Name</div>
+          <div id="prof-name" style="font-weight: 700; margin-top: 4px;">Loading...</div>
+        </div>
+        <div style="background: var(--color-bg-subtle); padding: 14px; border-radius: 12px;">
+          <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-text-subtle);">Verified Email</div>
+          <div id="prof-email" style="font-weight: 700; margin-top: 4px;">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Global Privacy Settings -->
+    <div class="card" style="margin-bottom: 24px;">
+      <h4 style="margin-bottom: 8px;">Global Emergency Contact Rules</h4>
+      <p style="color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 16px;">Control how finders can contact you across all smart collar tags.</p>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-top: 1px solid var(--color-border);">
+        <div>
+          <strong>Allow Direct Inbound Calls</strong>
+          <div style="color: var(--color-text-muted); font-size: 0.8rem;">When enabled, finders can tap to call your phone directly from the public collar tag scan screen.</div>
+        </div>
+        <input type="checkbox" id="allowDirectCalls" style="width: 22px; height: 22px;" checked>
+      </div>
+    </div>
+
+    <!-- Active Registered Devices -->
+    <div class="card">
+      <h4 style="margin-bottom: 8px;">Registered Mobile & Push Devices</h4>
+      <p style="color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 16px;">Devices configured to receive high-priority QR scan and lost recovery push notifications.</p>
+
+      <div id="devices-list" style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--color-bg-subtle); border-radius: 10px; font-size: 0.9rem;">
+          <div>
+            <strong>📱 Web Companion Console</strong>
+            <div style="color: var(--color-text-muted); font-size: 0.75rem;">Platform: Chrome / Safari • Active Session</div>
+          </div>
+          <span class="badge badge-active">Active</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    window.auth.requireAuth();
+
+    async function loadProfile() {
+      const user = window.auth.getUser();
+      if (user) {
+        document.getElementById('prof-name').innerText = `${user.firstName} ${user.lastName}`;
+        document.getElementById('prof-email').innerText = user.email;
+        document.getElementById('allowDirectCalls').checked = user.allowDirectCalls ?? false;
+      }
+
+      try {
+        const fullUser = await window.api.getMe();
+        if (fullUser) {
+          window.auth.setUser(fullUser);
+          document.getElementById('prof-name').innerText = `${fullUser.firstName} ${fullUser.lastName}`;
+          document.getElementById('prof-email').innerText = fullUser.email;
+          document.getElementById('allowDirectCalls').checked = fullUser.allowDirectCalls ?? false;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    loadProfile();
+  </script>
+</body>
+</html>

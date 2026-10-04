@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart QR Collar Tags — PetIdentity</title>
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <div id="navbar-container"></div>
+
+  <div class="dashboard-layout">
+    <aside class="dashboard-sidebar">
+      <div style="margin-bottom: 24px;">
+        <label class="form-label" style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-text-subtle);">Active Companion</label>
+        <select id="global-pet-switcher" class="form-control" style="font-weight: 600;">
+          <option>Loading pets...</option>
+        </select>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li class="sidebar-item"><a href="/pages/dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="/pages/pet.html">🐾 Pet Profile & Identity</a></li>
+        <li class="sidebar-item active"><a href="/pages/qr-manage.html">🏷️ QR Collar Tag</a></li>
+        <li class="sidebar-item"><a href="/pages/vaccinations.html">💉 Vaccinations</a></li>
+        <li class="sidebar-item"><a href="/pages/medical.html">🩺 Medical History</a></li>
+        <li class="sidebar-item"><a href="/pages/reminders.html">⏰ Reminders</a></li>
+        <li class="sidebar-item"><a href="/pages/documents.html">📁 Documents</a></li>
+        <li class="sidebar-item"><a href="/pages/lost-found.html">🚨 Lost & Found Hub</a></li>
+        <li class="sidebar-item"><a href="/pages/vets.html">🏥 Find Nearby Vets</a></li>
+      </ul>
+    </aside>
+
+    <main class="dashboard-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <h2>Smart QR Collar Tags & Medals</h2>
+          <p style="color: var(--color-text-muted);">Manage physical tags, download high-resolution vector codes for printing, or revoke lost medals.</p>
+        </div>
+        <button onclick="generateNewTag()" class="btn btn-primary btn-sm">+ Generate Replacement Tag</button>
+      </div>
+
+      <!-- Active Tag Preview Card -->
+      <div class="card" style="margin-bottom: 30px; display: grid; grid-template-columns: 240px 1fr; gap: 30px; align-items: center;">
+        <div style="text-align: center; background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
+          <img id="active-qr-image" src="" alt="Active Tag QR" style="width: 180px; height: 180px; margin: 0 auto 12px;">
+          <div style="font-size: 0.8rem; font-family: monospace; color: var(--color-text-muted);" id="active-tag-token">TOKEN: --------</div>
+        </div>
+
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+            <h3 id="active-tag-title">Primary Collar Medal</h3>
+            <span class="badge badge-active">● Active & Armed</span>
+          </div>
+          <p style="color: var(--color-text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">
+            This tag points directly to your companion's encrypted profile. If lost, anyone with a smartphone can scan the code to alert you with their approximate location.
+          </p>
+
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <a id="btn-download-qr" href="#" download="pet-qr-tag.png" class="btn btn-secondary btn-sm">⬇️ Download High-Res PNG</a>
+            <a id="btn-print-tag" href="#" target="_blank" class="btn btn-secondary btn-sm">🖨️ Print Wallet & Tag Sheet</a>
+            <a id="btn-test-scan" href="#" target="_blank" class="btn btn-primary btn-sm">📱 Test Finder Scan ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Past / Revoked Tags -->
+      <div class="card">
+        <h4 style="margin-bottom: 16px;">Tag History & Revocation</h4>
+        <div id="tags-table-container">
+          <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--color-border); font-size: 0.85rem; text-transform: uppercase; color: var(--color-text-subtle);">
+                <th style="padding: 12px 16px;">Label</th>
+                <th style="padding: 12px 16px;">Token</th>
+                <th style="padding: 12px 16px;">Total Scans</th>
+                <th style="padding: 12px 16px;">Status</th>
+                <th style="padding: 12px 16px; text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="tags-tbody">
+              <!-- Loaded via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    window.auth.requireAuth();
+
+    async function loadQRCodes() {
+      const petId = localStorage.getItem('active_pet_id');
+      if (!petId) return;
+
+      try {
+        const codes = await window.api.getPetQRCodes(petId);
+        const activeCode = codes?.find(c => c.status === 'ACTIVE') || codes?.[0];
+
+        if (activeCode) {
+          const qrSrc = `/api/v1/public/qr/${activeCode.token}.png`;
+          document.getElementById('active-qr-image').src = qrSrc;
+          document.getElementById('active-tag-token').innerText = `TOKEN: ${activeCode.token}`;
+          document.getElementById('active-tag-title').innerText = activeCode.tagLabel || 'Primary Collar Medal';
+          document.getElementById('btn-download-qr').href = qrSrc;
+          document.getElementById('btn-test-scan').href = `/pages/public-pet.html?token=${activeCode.token}`;
+          document.getElementById('btn-print-tag').href = qrSrc;
+        }
+
+        const tbody = document.getElementById('tags-tbody');
+        if (!codes || codes.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 24px;">No tags found.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = codes.map(c => `
+          <tr style="border-bottom: 1px solid var(--color-border);">
+            <td style="padding: 14px 16px;"><strong>${c.tagLabel}</strong></td>
+            <td style="padding: 14px 16px; font-family: monospace; font-size: 0.85rem;">${c.token}</td>
+            <td style="padding: 14px 16px;">${c.scanCount || 0} scans</td>
+            <td style="padding: 14px 16px;">
+              <span class="badge ${c.status === 'ACTIVE' ? 'badge-active' : ''}">${c.status}</span>
+            </td>
+            <td style="padding: 14px 16px; text-align: right;">
+              ${c.status === 'ACTIVE' 
+                ? `<button onclick="revokeTag('${c.id}')" class="btn btn-outline btn-sm" style="color: var(--color-danger); border-color: var(--color-danger-light);">Revoke Tag</button>` 
+                : '<span style="color: var(--color-text-subtle); font-size: 0.85rem;">Revoked</span>'
+              }
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function generateNewTag() {
+      const petId = localStorage.getItem('active_pet_id');
+      const label = prompt('Enter a label for this tag (e.g. Silicone Travel Tag):', 'Replacement Collar Tag');
+      if (!label) return;
+
+      try {
+        await window.api.generateQRCode(petId, label);
+        window.ui.showToast('New QR Tag generated!', 'success');
+        loadQRCodes();
+      } catch (err) {
+        window.ui.showToast(err.message, 'error');
+      }
+    }
+
+    async function revokeTag(tagId) {
+      const reason = prompt('Enter revocation reason (e.g. Tag lost in park):', 'Lost or damaged tag');
+      if (!reason) return;
+
+      try {
+        await window.api.revokeQRCode(tagId, reason);
+        window.ui.showToast('Tag revoked. It will no longer resolve publicly.', 'success');
+        loadQRCodes();
+      } catch (err) {
+        window.ui.showToast(err.message, 'error');
+      }
+    }
+
+    loadQRCodes();
+  </script>
+</body>
+</html>

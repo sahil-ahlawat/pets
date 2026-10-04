@@ -1,0 +1,23 @@
+# values-staging.yaml
+global:
+  environment: staging
+
+api:
+  replicaCount: 2
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+
+worker:
+  replicaCount: 2
+
+scheduler:
+  replicaCount: 1
+
+ingress:
+  hosts:
+    - host: api.staging.petidentity.com
+      paths:
+        - path: /
+          pathType: Prefix

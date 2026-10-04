@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Features & Architecture — PetIdentity</title>
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <div id="navbar-container"></div>
+
+  <div class="container" style="padding: 60px 20px;">
+    <div style="text-align: center; max-width: 720px; margin: 0 auto 50px;">
+      <div class="hero-badge">Architectural Excellence</div>
+      <h1 style="font-size: 2.8rem; margin: 12px 0 16px;">Built for Reliability, Speed & Uncompromising Privacy</h1>
+      <p style="color: var(--color-text-muted); font-size: 1.1rem; line-height: 1.6;">
+        Explore how PetIdentity bridges physical smart collar tags with high-performance cloud architecture to keep companions protected everywhere.
+      </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+      <div class="card">
+        <div style="font-size: 2rem; margin-bottom: 12px;">🏷️</div>
+        <h3>Cryptographically Random QR Tokens</h3>
+        <p style="color: var(--color-text-muted); margin-top: 8px;">Collar tags do not contain sequential or guessable database IDs. Each tag embeds a high-entropy 128-bit cryptographic token that can be instantly revoked or replaced without deleting the pet profile.</p>
+      </div>
+
+      <div class="card">
+        <div style="font-size: 2rem; margin-bottom: 12px;">🛡️</div>
+        <h3>Zero-Leak Privacy Shield</h3>
+        <p style="color: var(--color-text-muted); margin-top: 8px;">Your phone number and physical address remain strictly masked by default. Finders contact you through an in-app secure bridge, ensuring pet security without sacrificing personal privacy.</p>
+      </div>
+
+      <div class="card">
+        <div style="font-size: 2rem; margin-bottom: 12px;">⚡</div>
+        <h3>Transactional Outbox Pattern</h3>
+        <p style="color: var(--color-text-muted); margin-top: 8px;">Database mutations and notification events commit atomically inside PostgreSQL, ensuring zero lost alerts even during high-traffic spikes.</p>
+      </div>
+
+      <div class="card">
+        <div style="font-size: 2rem; margin-bottom: 12px;">📡</div>
+        <h3>Real-time Geolocation Logging</h3>
+        <p style="color: var(--color-text-muted); margin-top: 8px;">When a finder scans the tag, their mobile browser requests approximate coordinates to immediately pinpoint the reunion point on your map.</p>
+      </div>
+
+      <div class="card">
+        <div style="font-size: 2rem; margin-bottom: 12px;">💉</div>
+        <h3>Veterinary Health & Vaccine Ledger</h3>
+        <p style="color: var(--color-text-muted); margin-top: 8px;">Integrated WSAVA vaccination catalog, manufacturer batch verification, and booster countdowns that notify you before immunizations lapse.</p>
+      </div>
+
+      <div class="card">
+        <div style="font-size: 2rem; margin-bottom: 12px;">📱</div>
+        <h3>Universal Mobile Deep Linking</h3>
+        <p style="color: var(--color-text-muted); margin-top: 8px;">Tags open the native Flutter application on iOS & Android for owners, or the ultra-fast responsive web profile for third-party finders with zero download friction.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

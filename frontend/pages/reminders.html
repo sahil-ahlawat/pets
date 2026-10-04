@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Reminders — PetIdentity</title>
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <div id="navbar-container"></div>
+
+  <div class="dashboard-layout">
+    <aside class="dashboard-sidebar">
+      <div style="margin-bottom: 24px;">
+        <label class="form-label" style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-text-subtle);">Active Companion</label>
+        <select id="global-pet-switcher" class="form-control" style="font-weight: 600;">
+          <option>Loading pets...</option>
+        </select>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li class="sidebar-item"><a href="/pages/dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="/pages/pet.html">🐾 Pet Profile & Identity</a></li>
+        <li class="sidebar-item"><a href="/pages/qr-manage.html">🏷️ QR Collar Tag</a></li>
+        <li class="sidebar-item"><a href="/pages/vaccinations.html">💉 Vaccinations</a></li>
+        <li class="sidebar-item"><a href="/pages/medical.html">🩺 Medical History</a></li>
+        <li class="sidebar-item active"><a href="/pages/reminders.html">⏰ Reminders</a></li>
+        <li class="sidebar-item"><a href="/pages/documents.html">📁 Documents</a></li>
+        <li class="sidebar-item"><a href="/pages/lost-found.html">🚨 Lost & Found Hub</a></li>
+        <li class="sidebar-item"><a href="/pages/vets.html">🏥 Find Nearby Vets</a></li>
+      </ul>
+    </aside>
+
+    <main class="dashboard-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <h2>Smart Companion Reminders</h2>
+          <p style="color: var(--color-text-muted);">Automated notifications for medications, flea/tick prophylaxis, grooming, and vet appointments.</p>
+        </div>
+        <button onclick="window.ui.openModal('modal-add-reminder')" class="btn btn-primary btn-sm">+ Create Reminder</button>
+      </div>
+
+      <div class="card">
+        <div id="reminders-list" style="display: flex; flex-direction: column; gap: 12px;">
+          <p style="color: var(--color-text-muted); text-align: center; padding: 24px;">Loading reminders...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: Add Reminder -->
+  <div id="modal-add-reminder" class="modal-overlay">
+    <div class="modal-dialog">
+      <h3 style="margin-bottom: 16px;">Create Companion Reminder</h3>
+      <form id="form-reminder">
+        <div class="form-group">
+          <label class="form-label">Reminder Category</label>
+          <select id="remType" class="form-control">
+            <option value="FLEA_TICK">Flea & Tick Prevention</option>
+            <option value="DEWORMING">Deworming Dose</option>
+            <option value="VACCINATION">Vaccination Booster</option>
+            <option value="VET_APPOINTMENT">Veterinary Consultation</option>
+            <option value="GROOMING">Grooming & Bath</option>
+            <option value="CUSTOM">Custom Reminder</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Title *</label>
+          <input type="text" id="remTitle" class="form-control" placeholder="e.g. Monthly NexGard Chewable" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Due Date *</label>
+          <input type="date" id="remDueDate" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Recurrence</label>
+          <select id="remRecurrence" class="form-control">
+            <option value="ONCE">One-time only</option>
+            <option value="MONTHLY">Monthly</option>
+            <option value="QUARTERLY">Every 3 months</option>
+            <option value="YEARLY">Yearly</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes (Optional)</label>
+          <textarea id="remDesc" class="form-control" placeholder="Give with morning meal."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button type="button" onclick="window.ui.closeModal('modal-add-reminder')" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1;">Save Reminder</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    window.auth.requireAuth();
+
+    async function loadReminders() {
+      try {
+        const reminders = await window.api.getReminders();
+        const listDiv = document.getElementById('reminders-list');
+
+        if (!reminders || reminders.length === 0) {
+          listDiv.innerHTML = `
+            <div class="empty-state" style="padding: 30px;">
+              <div class="empty-state-icon">⏰</div>
+              <h4>No Reminders Pending</h4>
+              <p style="color: var(--color-text-muted); font-size: 0.9rem; margin-top: 4px;">Click <strong>+ Create Reminder</strong> to schedule preventive treatments.</p>
+            </div>
+          `;
+          return;
+        }
+
+        listDiv.innerHTML = reminders.map(r => `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border: 1px solid var(--color-border); border-radius: 12px; background: ${r.isCompleted ? 'var(--color-bg-subtle)' : 'white'}; opacity: ${r.isCompleted ? '0.7' : '1'};">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge ${r.isCompleted ? 'badge-reunited' : 'badge-active'}">${r.reminderType}</span>
+                <strong style="font-size: 1rem; ${r.isCompleted ? 'text-decoration: line-through;' : ''}">${r.title}</strong>
+              </div>
+              <div style="color: var(--color-text-muted); font-size: 0.85rem; margin-top: 4px;">
+                Due: <strong>${window.ui.formatDate(r.dueDate)}</strong> • Pet: ${r.petName || 'Companion'} • ${r.recurrence}
+              </div>
+              ${r.description ? `<div style="font-size: 0.85rem; color: var(--color-text-subtle); margin-top: 2px;">${r.description}</div>` : ''}
+            </div>
+            <div>
+              ${!r.isCompleted ? `<button onclick="completeReminder('${r.id}')" class="btn btn-outline btn-sm">Mark Complete ✓</button>` : '<span style="color: var(--color-primary); font-weight: 600; font-size: 0.85rem;">✓ Completed</span>'}
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function completeReminder(id) {
+      try {
+        await window.api.completeReminder(id);
+        window.ui.showToast('Reminder marked complete!', 'success');
+        loadReminders();
+      } catch (err) {
+        window.ui.showToast(err.message, 'error');
+      }
+    }
+
+    document.getElementById('form-reminder').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const petId = localStorage.getItem('active_pet_id');
+      const payload = {
+        petId: petId,
+        reminderType: document.getElementById('remType').value,
+        title: document.getElementById('remTitle').value.trim(),
+        dueDate: document.getElementById('remDueDate').value,
+        recurrence: document.getElementById('remRecurrence').value,
+        description: document.getElementById('remDesc').value.trim(),
+      };
+
+      try {
+        await window.api.createReminder(payload);
+        window.ui.closeModal('modal-add-reminder');
+        window.ui.showToast('Reminder scheduled!', 'success');
+        loadReminders();
+      } catch (err) {
+        window.ui.showToast(err.message, 'error');
+      }
+    });
+
+    loadReminders();
+  </script>
+</body>
+</html>

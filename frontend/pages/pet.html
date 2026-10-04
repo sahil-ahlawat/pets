@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Companion Profile — PetIdentity</title>
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <div id="navbar-container"></div>
+
+  <div class="dashboard-layout">
+    <aside class="dashboard-sidebar">
+      <div style="margin-bottom: 24px;">
+        <label class="form-label" style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-text-subtle);">Active Companion</label>
+        <select id="global-pet-switcher" class="form-control" style="font-weight: 600;">
+          <option>Loading pets...</option>
+        </select>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li class="sidebar-item"><a href="/pages/dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item active"><a href="/pages/pet.html">🐾 Pet Profile & Identity</a></li>
+        <li class="sidebar-item"><a href="/pages/qr-manage.html">🏷️ QR Collar Tag</a></li>
+        <li class="sidebar-item"><a href="/pages/vaccinations.html">💉 Vaccinations</a></li>
+        <li class="sidebar-item"><a href="/pages/medical.html">🩺 Medical History</a></li>
+        <li class="sidebar-item"><a href="/pages/reminders.html">⏰ Reminders</a></li>
+        <li class="sidebar-item"><a href="/pages/documents.html">📁 Documents</a></li>
+        <li class="sidebar-item"><a href="/pages/lost-found.html">🚨 Lost & Found Hub</a></li>
+        <li class="sidebar-item"><a href="/pages/vets.html">🏥 Find Nearby Vets</a></li>
+      </ul>
+    </aside>
+
+    <main class="dashboard-content">
+      <!-- Pet Profile Hero Banner -->
+      <div class="card" style="margin-bottom: 30px; background: linear-gradient(135deg, #f8fafc, #ffffff); border-left: 6px solid var(--color-primary);">
+        <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap;">
+          <div id="pet-avatar" style="width: 100px; height: 100px; border-radius: 24px; background: var(--color-primary-light); display: flex; align-items: center; justify-content: center; font-size: 3rem; overflow: hidden; box-shadow: var(--shadow-md);">
+            🐾
+          </div>
+
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+              <h2 id="pet-name">Loading...</h2>
+              <span id="pet-status-badge"></span>
+            </div>
+            <p id="pet-subline" style="color: var(--color-text-muted); font-size: 0.95rem;"></p>
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <a id="public-qr-link" href="#" target="_blank" class="btn btn-secondary btn-sm">📱 Public QR Preview ↗</a>
+            <button onclick="toggleLostMode()" id="lost-mode-btn" class="btn btn-danger btn-sm">🚨 Lost Mode</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="tabs-nav">
+        <button class="tab-btn active" onclick="switchTab('overview')">Overview & Bio</button>
+        <button class="tab-btn" onclick="switchTab('privacy')">Privacy Shield</button>
+        <button class="tab-btn" onclick="switchTab('emergency')">Emergency Contacts</button>
+      </div>
+
+      <!-- Tab 1: Overview -->
+      <div id="tab-overview" class="tab-content">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+          <div class="card">
+            <h4>Identity & Care Bio</h4>
+            <div id="bio-content" style="color: var(--color-text-muted); margin: 12px 0 20px; line-height: 1.6;">
+              No bio provided yet. Add personality traits, likes and feeding schedules.
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px;">
+              <div style="background: var(--color-bg-subtle); padding: 14px; border-radius: 12px;">
+                <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--color-text-subtle);">Microchip ISO #</span>
+                <div id="microchip-val" style="font-weight: 700; font-family: monospace; font-size: 1rem; margin-top: 4px;">Not recorded</div>
+              </div>
+              <div style="background: var(--color-bg-subtle); padding: 14px; border-radius: 12px;">
+                <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--color-text-subtle);">Weight</span>
+                <div id="weight-val" style="font-weight: 700; font-size: 1rem; margin-top: 4px;">-- kg</div>
+              </div>
+            </div>
+
+            <div style="margin-top: 24px;">
+              <h5 style="color: var(--color-danger); margin-bottom: 8px;">⚠️ Critical Allergies & Medical Warnings</h5>
+              <div id="allergies-val" style="background: var(--color-danger-light); color: #9f1239; padding: 14px; border-radius: 12px; font-size: 0.9rem;">
+                No known allergies recorded.
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick QR Tag Card -->
+          <div class="card" style="text-align: center;">
+            <h4>Collar QR Tag</h4>
+            <p style="color: var(--color-text-muted); font-size: 0.85rem; margin: 4px 0 16px;">Scan to open safe profile</p>
+            <div id="qr-image-container" style="margin: 0 auto 16px; display: inline-block; padding: 12px; background: white; border-radius: 16px; box-shadow: var(--shadow-md);">
+              <img id="qr-img" src="" alt="QR Tag" style="width: 140px; height: 140px;">
+            </div>
+            <div>
+              <a href="/pages/qr-manage.html" class="btn btn-primary btn-sm" style="width: 100%;">Manage & Print Tag</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Privacy Shield -->
+      <div id="tab-privacy" class="tab-content" style="display: none;">
+        <div class="card" style="max-width: 680px;">
+          <h4>Privacy Shield Controls</h4>
+          <p style="color: var(--color-text-muted); font-size: 0.9rem; margin: 6px 0 24px;">
+            Configure precisely what information a finder sees when scanning the collar tag.
+          </p>
+
+          <form id="privacy-form">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--color-border);">
+              <div>
+                <strong>Display Owner Name</strong>
+                <div style="color: var(--color-text-muted); font-size: 0.8rem;">Shows first and last name on public scan profile.</div>
+              </div>
+              <input type="checkbox" id="showOwnerName" style="width: 20px; height: 20px;">
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--color-border);">
+              <div>
+                <strong>Display Phone Number on Tag</strong>
+                <div style="color: var(--color-text-muted); font-size: 0.8rem;">Allow finders to call directly instead of secure in-app message.</div>
+              </div>
+              <input type="checkbox" id="showOwnerPhone" style="width: 20px; height: 20px;">
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--color-border);">
+              <div>
+                <strong>Display Microchip ID</strong>
+                <div style="color: var(--color-text-muted); font-size: 0.8rem;">Enables vets and shelters to immediately verify identity.</div>
+              </div>
+              <input type="checkbox" id="showMicrochip" style="width: 20px; height: 20px;">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 20px;">Save Privacy Preferences</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Tab 3: Emergency Contacts -->
+      <div id="tab-emergency" class="tab-content" style="display: none;">
+        <div class="card" style="max-width: 680px;">
+          <h4>Secondary Emergency Contacts</h4>
+          <p style="color: var(--color-text-muted); font-size: 0.9rem; margin: 6px 0 20px;">
+            Backup contact if you cannot be reached immediately.
+          </p>
+
+          <div style="background: var(--color-bg-subtle); padding: 16px; border-radius: 12px;">
+            <div style="font-size: 0.85rem; color: var(--color-text-subtle);">Contact Name</div>
+            <div id="emerg-name" style="font-weight: 700; font-size: 1rem; margin-top: 4px;">None configured</div>
+            <div style="margin-top: 12px; font-size: 0.85rem; color: var(--color-text-subtle);">Phone</div>
+            <div id="emerg-phone" style="font-weight: 700; font-size: 1rem; margin-top: 4px;">None</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    window.auth.requireAuth();
+
+    let currentPet = null;
+
+    async function loadPetDetails() {
+      const urlParams = new URLSearchParams(window.location.search);
+      let petId = urlParams.get('id') || localStorage.getItem('active_pet_id');
+
+      if (!petId) {
+        const petsRes = await window.api.getPets();
+        if (petsRes.pets && petsRes.pets.length > 0) {
+          petId = petsRes.pets[0].id;
+        } else {
+          window.location.href = '/pages/pet-new.html';
+          return;
+        }
+      }
+
+      localStorage.setItem('active_pet_id', petId);
+
+      try {
+        currentPet = await window.api.getPet(petId);
+
+        document.getElementById('pet-name').innerText = currentPet.name;
+        document.getElementById('pet-status-badge').innerHTML = window.ui.getStatusBadge(currentPet.status);
+        document.getElementById('pet-subline').innerText = `${currentPet.species} • ${currentPet.breed || 'Unknown breed'} • ${currentPet.gender || 'Unknown gender'}`;
+
+        if (currentPet.avatarUrl) {
+          document.getElementById('pet-avatar').innerHTML = `<img src="${currentPet.avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;" alt="${currentPet.name}">`;
+        }
+
+        if (currentPet.bio) document.getElementById('bio-content').innerText = currentPet.bio;
+        if (currentPet.microchipNumber) document.getElementById('microchip-val').innerText = currentPet.microchipNumber;
+        if (currentPet.weightKg) document.getElementById('weight-val').innerText = `${currentPet.weightKg} kg`;
+        if (currentPet.allergies) document.getElementById('allergies-val').innerText = currentPet.allergies;
+
+        if (currentPet.activeQrToken) {
+          document.getElementById('public-qr-link').href = `/pages/public-pet.html?token=${currentPet.activeQrToken}`;
+          document.getElementById('qr-img').src = `/api/v1/public/qr/${currentPet.activeQrToken}.png`;
+        }
+
+        // Privacy checkboxes
+        document.getElementById('showOwnerName').checked = currentPet.showOwnerName ?? true;
+        document.getElementById('showOwnerPhone').checked = currentPet.showOwnerPhone ?? false;
+        document.getElementById('showMicrochip').checked = currentPet.showMicrochip ?? true;
+
+        if (currentPet.emergencyContactName) document.getElementById('emerg-name').innerText = currentPet.emergencyContactName;
+        if (currentPet.emergencyContactPhone) document.getElementById('emerg-phone').innerText = currentPet.emergencyContactPhone;
+
+        const lostBtn = document.getElementById('lost-mode-btn');
+        if (currentPet.status === 'LOST') {
+          lostBtn.innerText = '🎉 Mark Reunited';
+          lostBtn.className = 'btn btn-primary btn-sm';
+        } else {
+          lostBtn.innerText = '🚨 Lost Mode';
+          lostBtn.className = 'btn btn-danger btn-sm';
+        }
+      } catch (err) {
+        window.ui.showToast(err.message, 'error');
+      }
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+
+      event.target.classList.add('active');
+      document.getElementById(`tab-${tabName}`).style.display = 'block';
+    }
+
+    async function toggleLostMode() {
+      if (!currentPet) return;
+      if (currentPet.status === 'LOST') {
+        if (!confirm('Mark companion safely reunited with family?')) return;
+        await window.api.markPetReunited(currentPet.id);
+        window.ui.showToast('Reunion confirmed!', 'success');
+        loadPetDetails();
+      } else {
+        const address = prompt('Enter last seen address/neighborhood:');
+        if (!address) return;
+        await window.api.markPetLost(currentPet.id, { lastSeenAddress: address });
+        window.ui.showToast('🚨 Lost Mode activated. Public tag updated.', 'success');
+        loadPetDetails();
+      }
+    }
+
+    document.getElementById('privacy-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        await window.api.updatePet(currentPet.id, {
+          showOwnerName: document.getElementById('showOwnerName').checked,
+          showOwnerPhone: document.getElementById('showOwnerPhone').checked,
+          showMicrochip: document.getElementById('showMicrochip').checked,
+        });
+        window.ui.showToast('Privacy preferences saved!', 'success');
+      } catch (err) {
+        window.ui.showToast(err.message, 'error');
+      }
+    });
+
+    loadPetDetails();
+  </script>
+</body>
+</html>

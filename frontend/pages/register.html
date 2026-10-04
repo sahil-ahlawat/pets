@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Free Account — PetIdentity</title>
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body style="min-height: 100vh; display: flex; flex-direction: column;">
+  <div id="navbar-container"></div>
+
+  <div class="container container-sm" style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px;">
+    <div class="card" style="width: 100%; max-width: 480px;">
+      <div style="text-align: center; margin-bottom: 28px;">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">✨</div>
+        <h2>Create Companion Profile</h2>
+        <p style="color: var(--color-text-muted); font-size: 0.95rem; margin-top: 4px;">Join thousands of pet owners protecting their companions with dynamic digital QR identity.</p>
+      </div>
+
+      <form id="register-form">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input type="text" id="firstName" class="form-control" placeholder="Sarah" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input type="text" id="lastName" class="form-control" placeholder="Connor" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" id="email" class="form-control" placeholder="sarah@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Phone Number (Optional)</label>
+          <input type="tel" id="phoneNumber" class="form-control" placeholder="+1 (555) 019-2834">
+          <small style="color: var(--color-text-muted); font-size: 0.75rem;">Kept private by default. You control emergency visibility.</small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Create Password</label>
+          <input type="password" id="password" class="form-control" placeholder="Min. 8 characters" minlength="8" required>
+        </div>
+
+        <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%; margin-top: 8px;">Create Account & Add First Pet →</button>
+      </form>
+
+      <div style="text-align: center; margin-top: 24px; font-size: 0.9rem; color: var(--color-text-muted);">
+        Already have an account? <a href="/pages/login.html" style="font-weight: 600;">Sign In</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    window.auth.requireGuest();
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const firstName = document.getElementById('firstName').value.trim();
+      const lastName = document.getElementById('lastName').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phoneNumber = document.getElementById('phoneNumber').value.trim();
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('submit-btn');
+
+      try {
+        btn.disabled = true;
+        btn.innerText = 'Creating Account...';
+        const res = await window.api.register({ firstName, lastName, email, phoneNumber, password });
+        window.auth.saveSession(res);
+        window.ui.showToast('Account created! Welcome to PetIdentity.', 'success');
+        setTimeout(() => window.location.href = '/pages/pet-new.html', 500);
+      } catch (err) {
+        window.ui.showToast(err.message || 'Registration failed. Try again.', 'error');
+        btn.disabled = false;
+        btn.innerText = 'Create Account & Add First Pet →';
+      }
+    });
+  </script>
+</body>
+</html>
