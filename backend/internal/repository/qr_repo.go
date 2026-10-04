@@ -15,7 +15,7 @@ type QRRepository interface {
 	GetQRCodesByPetID(ctx context.Context, petID uuid.UUID) ([]domain.PetQRCode, error)
 	GenerateNewQRCode(ctx context.Context, petID uuid.UUID, tagLabel string) (*domain.PetQRCode, error)
 	RevokeQRCode(ctx context.Context, qrID uuid.UUID, reason string) error
-	GetPublicPetByToken(ctx context.Context, token string) (*domain.PublicPetProfile, *uuid.UUID, *uuid.UUID, error)
+	GetPublicPetByToken(ctx context.Context, token string) (*domain.PublicPetProfile, *uuid.UUID, *uuid.UUID, *uuid.UUID, error)
 	RecordScan(ctx context.Context, scan *domain.QRScan) error
 	RecordFoundReport(ctx context.Context, token string, req *domain.ReportFoundRequest) error
 }
@@ -101,8 +101,8 @@ func (r *sqlQRRepo) RevokeQRCode(ctx context.Context, qrID uuid.UUID, reason str
 	return err
 }
 
-// GetPublicPetByToken returns safe privacy-filtered DTO, plus petID and ownerID for notifications
-func (r *sqlQRRepo) GetPublicPetByToken(ctx context.Context, token string) (*domain.PublicPetProfile, *uuid.UUID, *uuid.UUID, error) {
+// GetPublicPetByToken returns safe privacy-filtered DTO, plus petID, ownerID, and qrCodeID for notifications and scan recording
+func (r *sqlQRRepo) GetPublicPetByToken(ctx context.Context, token string) (*domain.PublicPetProfile, *uuid.UUID, *uuid.UUID, *uuid.UUID, error) {
 	query := `
 		SELECT 
 			p.id, p.name, p.species, p.breed, p.gender, p.avatar_url, p.status,
@@ -140,10 +140,10 @@ func (r *sqlQRRepo) GetPublicPetByToken(ctx context.Context, token string) (*dom
 		&emergencyName, &emergencyPhone, &microchipVal, &qrCodeID,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil, nil, nil
+		return nil, nil, nil, nil, nil
 	}
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	pub := &domain.PublicPetProfile{
@@ -213,7 +213,7 @@ func (r *sqlQRRepo) GetPublicPetByToken(ctx context.Context, token string) (*dom
 		}
 	}
 
-	return pub, &petID, &ownerID, nil
+	return pub, &petID, &ownerID, &qrCodeID, nil
 }
 
 func (r *sqlQRRepo) RecordScan(ctx context.Context, scan *domain.QRScan) error {

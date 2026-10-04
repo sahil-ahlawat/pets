@@ -68,6 +68,7 @@ func main() {
 	r.Use(chimiddleware.Recoverer)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"},
+		AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Request-ID"},
 		ExposedHeaders:   []string{"Link", "X-Total-Count", "X-Request-ID"},
@@ -83,7 +84,7 @@ func main() {
 	// Deep-link redirect: /p/{token} -> frontend public pet page
 	r.Get("/p/{token}", func(w http.ResponseWriter, req *http.Request) {
 		token := chi.URLParam(req, "token")
-		http.Redirect(w, req, fmt.Sprintf("/public-pet.html?token=%s", token), http.StatusFound)
+		http.Redirect(w, req, fmt.Sprintf("%s/pages/public-pet.html?token=%s", cfg.PublicBaseURL, token), http.StatusFound)
 	})
 
 	// API v1

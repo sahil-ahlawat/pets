@@ -200,6 +200,14 @@
       const urlParams = new URLSearchParams(window.location.search);
       token = urlParams.get('token');
 
+      if (!token) {
+        const pathParts = window.location.pathname.split('/');
+        const pIdx = pathParts.indexOf('p');
+        if (pIdx !== -1 && pathParts[pIdx + 1]) {
+          token = pathParts[pIdx + 1];
+        }
+      }
+
       // Demo fallback if token not in URL
       if (!token) {
         token = 'demo-bruno';

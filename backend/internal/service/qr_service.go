@@ -60,7 +60,7 @@ func (s *qrService) RevokeQRCode(ctx context.Context, userID, qrID uuid.UUID, re
 }
 
 func (s *qrService) GetPublicProfile(ctx context.Context, token string, clientIP, userAgent string, lat, lng *float64) (*domain.PublicPetProfile, error) {
-	pub, petID, ownerID, err := s.qrRepo.GetPublicPetByToken(ctx, token)
+	pub, petID, ownerID, qrID, err := s.qrRepo.GetPublicPetByToken(ctx, token)
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +69,10 @@ func (s *qrService) GetPublicProfile(ctx context.Context, token string, clientIP
 	}
 
 	// Record scan in background/transaction asynchronously
-	if petID != nil {
+	if petID != nil && qrID != nil {
 		scan := &domain.QRScan{
 			ID:              uuid.New(),
+			QRCodeID:        *qrID,
 			PetID:           *petID,
 			ApproxLatitude:  lat,
 			ApproxLongitude: lng,
@@ -107,7 +108,7 @@ func (s *qrService) GenerateQRCodePNG(token string, size int) ([]byte, error) {
 }
 
 func (s *qrService) ContactOwner(ctx context.Context, token string, req *domain.ContactOwnerRequest) error {
-	pub, petID, ownerID, err := s.qrRepo.GetPublicPetByToken(ctx, token)
+	pub, petID, ownerID, _, err := s.qrRepo.GetPublicPetByToken(ctx, token)
 	if err != nil || pub == nil || ownerID == nil {
 		return errors.New("unable to reach pet owner")
 	}

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"pet-platform/backend/internal/domain"
@@ -30,6 +31,23 @@ func (s *reminderService) CreateReminder(ctx context.Context, userID uuid.UUID, 
 		return errors.New("access denied to pet")
 	}
 	r.UserID = userID
+
+	remType := strings.ToUpper(strings.TrimSpace(r.ReminderType))
+	switch remType {
+	case "VACCINATION", "MEDICATION", "DEWORMING", "FLEA_TICK", "VET_APPOINTMENT", "GROOMING", "CUSTOM":
+		r.ReminderType = remType
+	default:
+		r.ReminderType = "CUSTOM"
+	}
+
+	recurrence := strings.ToUpper(strings.TrimSpace(r.Recurrence))
+	switch recurrence {
+	case "ONCE", "DAILY", "WEEKLY", "MONTHLY", "QUARTERLY", "BIANNUAL", "YEARLY":
+		r.Recurrence = recurrence
+	default:
+		r.Recurrence = "ONCE"
+	}
+
 	return s.reminderRepo.CreateReminder(ctx, r)
 }
 

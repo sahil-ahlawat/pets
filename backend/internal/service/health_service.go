@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"pet-platform/backend/internal/domain"
@@ -58,6 +59,15 @@ func (s *healthService) CreateMedicalEvent(ctx context.Context, userID, petID uu
 		return errors.New("access denied to pet")
 	}
 	m.PetID = petID
+
+	eventType := strings.ToUpper(strings.TrimSpace(m.EventType))
+	switch eventType {
+	case "CONSULTATION", "DIAGNOSIS", "TREATMENT", "MEDICATION", "SURGERY", "LAB_TEST", "DENTAL", "WEIGHT_CHECK", "OTHER":
+		m.EventType = eventType
+	default:
+		m.EventType = "CONSULTATION"
+	}
+
 	return s.healthRepo.CreateMedicalEvent(ctx, m)
 }
 

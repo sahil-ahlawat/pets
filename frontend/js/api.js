@@ -4,9 +4,11 @@
  * Communicates with backend /api/v1/ endpoints with automatic JWT injection.
  */
 
-const API_BASE = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
-  ? 'http://localhost:8080/api/v1'
-  : '/api/v1';
+const API_BASE = window.PET_API_BASE || (
+  (window.location.port === '3000' || window.location.port === '80' || window.location.port === '' || !window.location.origin.includes('localhost'))
+    ? '/api/v1'
+    : 'http://localhost:8080/api/v1'
+);
 
 class ApiClient {
   constructor() {

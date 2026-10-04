@@ -99,10 +99,10 @@ func (r *sqlVetRepo) FindNearbyVets(ctx context.Context, lat, lng, radiusKm floa
 		SELECT id, clinic_name, doctor_name, license_number, phone_number, emergency_phone, email, website_url,
 		       address_line1, city, state, postal_code, country_code, latitude, longitude, is_24h_emergency,
 		       specializations, rating, review_count,
-		       (6371 * acos(cos(radians($1)) * cos(radians(latitude)) * cos(radians(longitude) - radians($2)) + sin(radians($1)) * sin(radians(latitude)))) AS distance_km
+		       (6371 * acos(least(1.0, greatest(-1.0, cos(radians($1)) * cos(radians(latitude)) * cos(radians(longitude) - radians($2)) + sin(radians($1)) * sin(radians(latitude)))))) AS distance_km
 		FROM vets
 		WHERE latitude IS NOT NULL AND longitude IS NOT NULL
-		  AND (6371 * acos(cos(radians($1)) * cos(radians(latitude)) * cos(radians(longitude) - radians($2)) + sin(radians($1)) * sin(radians(latitude)))) <= $3
+		  AND (6371 * acos(least(1.0, greatest(-1.0, cos(radians($1)) * cos(radians(latitude)) * cos(radians(longitude) - radians($2)) + sin(radians($1)) * sin(radians(latitude)))))) <= $3
 		ORDER BY distance_km ASC
 		LIMIT 50
 	`)

@@ -277,7 +277,7 @@ func (r *sqlPetRepo) UpdatePet(ctx context.Context, petID uuid.UUID, req *domain
 				UPDATE pets SET
 					name = COALESCE($2, name),
 					breed = COALESCE($3, breed),
-					gender = COALESCE($4, gender),
+					gender = COALESCE($4::pet_gender, gender),
 					is_neutered = COALESCE($5, is_neutered),
 					weight_kg = COALESCE($6, weight_kg),
 					avatar_url = COALESCE($7, avatar_url),

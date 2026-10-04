@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"pet-platform/backend/internal/domain"
@@ -31,8 +32,21 @@ func (s *petService) CreatePet(ctx context.Context, userID uuid.UUID, req *domai
 	if req.Name == "" {
 		return nil, errors.New("pet name is required")
 	}
-	if req.Species == "" {
+
+	species := strings.ToUpper(strings.TrimSpace(string(req.Species)))
+	switch species {
+	case "DOG", "CAT", "BIRD", "RABBIT", "HORSE", "FERRET", "REPTILE", "OTHER":
+		req.Species = domain.PetSpecies(species)
+	default:
 		req.Species = domain.SpeciesDog
+	}
+
+	gender := strings.ToUpper(strings.TrimSpace(req.Gender))
+	switch gender {
+	case "MALE", "FEMALE":
+		req.Gender = gender
+	default:
+		req.Gender = "UNKNOWN"
 	}
 
 	pet := &domain.Pet{
@@ -80,6 +94,17 @@ func (s *petService) UpdatePet(ctx context.Context, userID, petID uuid.UUID, req
 	if !hasAccess {
 		return nil, errors.New("access denied")
 	}
+
+	if req.Gender != nil {
+		g := strings.ToUpper(strings.TrimSpace(*req.Gender))
+		if g == "MALE" || g == "FEMALE" || g == "UNKNOWN" {
+			req.Gender = &g
+		} else {
+			def := "UNKNOWN"
+			req.Gender = &def
+		}
+	}
+
 	return s.petRepo.UpdatePet(ctx, petID, req)
 }
 

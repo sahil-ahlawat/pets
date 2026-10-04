@@ -69,6 +69,8 @@ func (w *Worker) processJob(ctx context.Context, job *domain.Job) {
 		err = w.handleFoundNotification(ctx, job.Payload)
 	case "SCHEDULE_VACCINE_BOOSTER_REMINDER":
 		err = w.handleVaccineBooster(ctx, job.Payload)
+	case "SEND_REMINDER_NOTIFICATION":
+		err = w.handleReminderNotification(ctx, job.Payload)
 	default:
 		// Unsupported job type
 		err = nil
@@ -117,5 +119,14 @@ func (w *Worker) handleVaccineBooster(ctx context.Context, payload []byte) error
 		return err
 	}
 	fmt.Printf("[Health Engine] Booster schedule calculated for %v (pet %v)\n", data["vaccineName"], data["petId"])
+	return nil
+}
+
+func (w *Worker) handleReminderNotification(ctx context.Context, payload []byte) error {
+	var data map[string]interface{}
+	if err := json.Unmarshal(payload, &data); err != nil {
+		return err
+	}
+	fmt.Printf("[Reminder Engine] Notification dispatched for reminder %v on pet %v: %v\n", data["reminderId"], data["petName"], data["title"])
 	return nil
 }
